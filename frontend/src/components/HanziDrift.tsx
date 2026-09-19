@@ -42,9 +42,35 @@ export function HanziDrift() {
       }
     }
 
+    function pinToViewport() {
+      const header = document.querySelector("[data-app-header]")
+      const top = header
+        ? Math.max(0, Math.round(header.getBoundingClientRect().bottom))
+        : 0
+      layer.style.top = `${top}px`
+    }
+
     function spawn() {
+<<<<<<< Updated upstream
       width = container.clientWidth || 800
       height = container.clientHeight || 600
+=======
+      pinToViewport()
+      const hallTop = parseInt(layer.style.top, 10) || 0
+      const nextWidth = layer.clientWidth || window.innerWidth || 800
+      const nextHeight =
+        layer.clientHeight || Math.max(window.innerHeight - hallTop, 1)
+      if (
+        particles.length > 0 &&
+        nextWidth === width &&
+        nextHeight === height
+      ) {
+        return
+      }
+
+      width = nextWidth
+      height = nextHeight
+>>>>>>> Stashed changes
       const count = quiet ? 12 : hanziCountForWidth(width)
       particles = createHanziField(width, height, count)
       container.replaceChildren()
@@ -88,13 +114,21 @@ export function HanziDrift() {
       typeof ResizeObserver === "function"
         ? new ResizeObserver(() => spawn())
         : null
+<<<<<<< Updated upstream
     observer?.observe(container)
+=======
+    observer?.observe(layer)
+    const header = document.querySelector("[data-app-header]")
+    if (header) observer?.observe(header)
+    window.addEventListener("resize", spawn)
+>>>>>>> Stashed changes
     window.addEventListener("pointermove", onPointerMove, { passive: true })
     window.addEventListener("pointerleave", onPointerLeave)
 
     return () => {
       window.cancelAnimationFrame(frame)
       observer?.disconnect()
+      window.removeEventListener("resize", spawn)
       window.removeEventListener("pointermove", onPointerMove)
       window.removeEventListener("pointerleave", onPointerLeave)
     }
@@ -104,7 +138,7 @@ export function HanziDrift() {
     <div
       ref={layerRef}
       aria-hidden="true"
-      className="hanzi-drift pointer-events-none absolute inset-0 overflow-hidden select-none"
+      className="hanzi-drift pointer-events-none fixed inset-x-0 bottom-0 z-0 overflow-hidden select-none"
     />
   )
 }

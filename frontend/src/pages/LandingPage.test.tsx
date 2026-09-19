@@ -20,4 +20,13 @@ describe("Landing page", () => {
     expect(screen.queryByRole("link", { name: "Listen" })).not.toBeInTheDocument()
     expect(screen.queryByLabelText("Character you heard")).not.toBeInTheDocument()
   })
+
+  it("pins bouncing hanzi under the nav and to the viewport edges", () => {
+    renderAt("/")
+
+    const field = document.querySelector(".hanzi-drift")
+    expect(field).toHaveClass("fixed", "inset-x-0", "bottom-0")
+    expect(field).toHaveStyle({ top: "0px" })
+    expect(document.querySelector("[data-app-header]")).toBeInTheDocument()
+  })
 })

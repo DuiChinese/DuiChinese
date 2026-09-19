@@ -13,7 +13,10 @@ const NAV_LINKS = [
 export function AppShell() {
   return (
     <div className="flex min-h-svh flex-col bg-background text-foreground">
-      <header className="flex flex-wrap items-center gap-4 px-5 py-5 sm:gap-6 sm:px-10">
+      <header
+        data-app-header
+        className="relative z-20 flex flex-wrap items-center gap-4 bg-background px-5 py-5 sm:gap-6 sm:px-10"
+      >
         <BrandLogo />
         <nav aria-label="Main" className="flex flex-wrap items-center gap-3">
           {NAV_LINKS.map((link) => (

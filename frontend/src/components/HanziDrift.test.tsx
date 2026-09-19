@@ -14,5 +14,6 @@ describe("HanziDrift", () => {
         DESKTOP_HANZI_COUNT
       )
     })
+    expect(field).toHaveClass("fixed", "inset-x-0", "bottom-0")
   })
 })

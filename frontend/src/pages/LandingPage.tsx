@@ -6,7 +6,7 @@ import { cn } from "cn"
 
 export function LandingPage() {
   return (
-    <section className="relative flex flex-1 flex-col items-center justify-center py-8">
+    <section className="relative z-10 flex flex-1 flex-col items-center justify-center py-8">
       <HanziDrift />
 
       <div className="relative z-10 flex max-w-xl flex-col items-center gap-8 px-2 text-center">

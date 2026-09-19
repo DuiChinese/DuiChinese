@@ -19,7 +19,7 @@ DuiChinese está diseñado como una aplicación web desacoplada en dos capas:
 ## Componentes del Frontend
 
 - **`AppShell`**: Lienzo carmesí, wordmark `public/assets/logo.svg` y navegación en pastillas oro.
-- **`LandingPage`**: Cartel carmesí con el objetivo del producto, un CTA a Flashcards y un campo de hanzi que rebotan y reaccionan al cursor (`HanziDrift`).
+- **`LandingPage`**: Cartel carmesí con el objetivo del producto, un CTA a Flashcards y un campo de hanzi que rebotan contra los bordes de la ventana, por debajo del nav (`HanziDrift`).
 - **`FlashcardsPage`**: Cuatro modos (`hanzi`, `meaning`, `listen`, `speak`) con SRS Anki.
 - **`HanziCard`**: Foto de marco 回纹 a proporción (`public/assets/card-frame.jpg`), esquinas ligeramente redondeadas, audio nativo y volteo.
 - **Voz**: `lib/speech.ts` usa Putonghua (`zh-CN`, nunca cantonés). El altavoz reproduce a velocidad normal y el caracol más despacio. `lib/recognition.ts` escucha en `zh-CN`.
