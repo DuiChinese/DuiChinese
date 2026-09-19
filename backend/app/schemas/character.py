@@ -44,6 +44,8 @@ class FlashcardReviewResponse(BaseModel):
     rating: int
     interval_days: Optional[int] = 0
     ease_factor: Optional[float] = 2.5
+    stability: Optional[float] = 0.0
+    difficulty: Optional[float] = 0.0
     reps: Optional[int] = 0
     lapses: Optional[int] = 0
     due_date: Optional[datetime] = None
@@ -51,11 +53,35 @@ class FlashcardReviewResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class CategoryCharacterItem(BaseModel):
+    id: int
+    hanzi: str
+    pinyin: str
+    meaning: str
+    tone: int = 1
+    interval_days: int = 0
+    stability: Optional[float] = 0.0
+    difficulty: Optional[float] = 0.0
+
+
+class CategoryDistribution(BaseModel):
+    new: List[CategoryCharacterItem] = []
+    learning: List[CategoryCharacterItem] = []
+    young: List[CategoryCharacterItem] = []
+    mature: List[CategoryCharacterItem] = []
+
+
 class StatsResponse(BaseModel):
     total_characters: int
     total_reviews: int
-    mastered_count: int
-    learning_count: int
+    new_count: int = 0
+    learning_count: int = 0
+    young_count: int = 0
+    mature_count: int = 0
+    mastered_count: int = 0
     due_today_count: Optional[int] = 0
     average_ease_factor: Optional[float] = 2.5
+    average_stability: Optional[float] = 0.0
+    average_difficulty: Optional[float] = 0.0
     retention_rate: Optional[float] = 100.0
+    categories: CategoryDistribution = CategoryDistribution()

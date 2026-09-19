@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs"
 import { resolve } from "node:path"
 
-const root = resolve(__dirname, "..")
+const root = resolve(process.cwd())
 
 describe("brand assets", () => {
   it("exposes named public icons instead of scratch SVGs", () => {

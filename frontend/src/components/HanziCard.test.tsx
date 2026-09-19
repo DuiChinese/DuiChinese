@@ -27,6 +27,8 @@ describe("HanziCard", () => {
     rerender(
       <HanziCard character={HSK1_CHARACTERS[0]} flipped onFlip={onFlip} />
     )
-    expect(screen.getByText("bù")).toBeInTheDocument()
+    const pinyinEl = screen.getByText("bù")
+    expect(pinyinEl).toBeInTheDocument()
+    expect(pinyinEl).toHaveClass("font-pinyin")
   })
 })

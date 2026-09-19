@@ -19,3 +19,5 @@ class CardSRS(Base):
     interval_days = Column(Integer, default=0)
     due_date = Column(DateTime(timezone=True), nullable=True)
     last_reviewed = Column(DateTime(timezone=True), nullable=True)
+    stability = Column(Float, nullable=True, default=0.0)
+    difficulty = Column(Float, nullable=True, default=0.0)

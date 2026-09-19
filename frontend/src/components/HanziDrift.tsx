@@ -19,11 +19,12 @@ export function HanziDrift() {
   const nodesRef = useRef<HTMLSpanElement[]>([])
 
   useEffect(() => {
-    const layer = layerRef.current
-    if (!layer) return
+    const layerEl = layerRef.current
+    if (!layerEl) return
+    const container: HTMLDivElement = layerEl
 
-    let width = layer.clientWidth || 800
-    let height = layer.clientHeight || 600
+    let width = container.clientWidth || 800
+    let height = container.clientHeight || 600
     let particles: HanziParticle[] = []
     let mouse: Vec2 | null = null
     let frame = 0
@@ -42,18 +43,18 @@ export function HanziDrift() {
     }
 
     function spawn() {
-      width = layer.clientWidth || 800
-      height = layer.clientHeight || 600
+      width = container.clientWidth || 800
+      height = container.clientHeight || 600
       const count = quiet ? 12 : hanziCountForWidth(width)
       particles = createHanziField(width, height, count)
-      layer.replaceChildren()
+      container.replaceChildren()
       nodesRef.current = particles.map((particle) => {
         const node = document.createElement("span")
         node.className =
           "hanzi-drift-glyph font-hanzi font-bold text-primary/25"
         node.textContent = particle.glyph
         node.style.fontSize = `${particle.size}px`
-        layer.appendChild(node)
+        container.appendChild(node)
         return node
       })
       paint()
@@ -70,7 +71,7 @@ export function HanziDrift() {
     }
 
     function onPointerMove(event: PointerEvent) {
-      const box = layer.getBoundingClientRect()
+      const box = container.getBoundingClientRect()
       mouse = {
         x: event.clientX - box.left,
         y: event.clientY - box.top,
@@ -87,7 +88,7 @@ export function HanziDrift() {
       typeof ResizeObserver === "function"
         ? new ResizeObserver(() => spawn())
         : null
-    observer?.observe(layer)
+    observer?.observe(container)
     window.addEventListener("pointermove", onPointerMove, { passive: true })
     window.addEventListener("pointerleave", onPointerLeave)
 

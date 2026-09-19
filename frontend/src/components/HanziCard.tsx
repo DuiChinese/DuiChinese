@@ -96,7 +96,7 @@ export function HanziCard({
               <div className="mt-2 flex flex-col items-center gap-1 sm:mt-3">
                 <span
                   className={cn(
-                    "font-sans font-medium text-card-foreground",
+                    "font-pinyin font-medium tracking-wide text-card-foreground",
                     isHero ? "text-3xl sm:text-4xl" : "text-xl"
                   )}
                 >

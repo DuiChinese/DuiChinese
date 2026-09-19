@@ -8,6 +8,7 @@
 @theme inline {
     --font-heading: "ZCOOL KuaiLe", "Geist Variable", sans-serif;
     --font-hanzi: "Noto Sans TC", "Noto Sans SC", "PingFang TC", sans-serif;
+    --font-pinyin: "Noto Sans", "PingFang SC", "PingFang TC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
     --font-sans: "Geist Variable", "Noto Sans TC", sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
@@ -185,4 +186,9 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+.font-pinyin {
+  font-family: var(--font-pinyin), "Noto Sans", "PingFang SC", "PingFang TC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, sans-serif;
+  font-feature-settings: "liga" 1, "calt" 1;
 }

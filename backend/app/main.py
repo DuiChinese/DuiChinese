@@ -19,6 +19,19 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing DuiChinese database tables...")
     Base.metadata.create_all(bind=engine)
 
+    # Ensure FSRS columns exist if table pre-dated them
+    try:
+        from sqlalchemy import text
+        with engine.begin() as conn:
+            res = conn.execute(text("PRAGMA table_info(card_srs)")).fetchall()
+            existing_cols = {row[1] for row in res}
+            if existing_cols and "stability" not in existing_cols:
+                conn.execute(text("ALTER TABLE card_srs ADD COLUMN stability FLOAT DEFAULT 0.0"))
+            if existing_cols and "difficulty" not in existing_cols:
+                conn.execute(text("ALTER TABLE card_srs ADD COLUMN difficulty FLOAT DEFAULT 0.0"))
+    except Exception as e:
+        logger.warning(f"Database schema check note: {e}")
+
     # Auto-seed if database is brand new
     db = SessionLocal()
     try:
