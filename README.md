@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="frontend/public/assets/logo-full.svg" alt="DuiChinese Logo" width="380" />
+  <img src="frontend/public/assets/logo.svg" alt="DuiChinese Logo" width="380" />
 
   <p><strong>Open-source platform to master Chinese Hanzi using Anki's Spaced Repetition Algorithm</strong></p>
 
@@ -7,8 +7,8 @@
     <a href="#licencia"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" /></a>
     <img src="https://img.shields.io/badge/Python-3.9+-3776AB?logo=python&logoColor=white" alt="Python" />
     <img src="https://img.shields.io/badge/FastAPI-0.110+-009688?logo=fastapi&logoColor=white" alt="FastAPI" />
-    <img src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black" alt="React" />
-    <img src="https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white" alt="Vite" />
+    <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" alt="React" />
+    <img src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white" alt="Vite" />
     <img src="https://img.shields.io/badge/tests-29%20passing-brightgreen" alt="Tests 29 passing" />
   </p>
 </div>
@@ -22,10 +22,11 @@
 ### ✨ Key Features
 
 1. **Clean, Minimalist Flat Aesthetic**:
-   - Flat crimson canvas (`#960708`) with zero drop shadows and zero gradients.
-   - Ivory card (`#F5F2EB`) framed by an authentic traditional Chinese geometric corner fret border (回纹).
-   - Floating audio button (`#FECB6D`) for native Mandarin pronunciation (`zh-CN`).
-   - Clean, direct interface without marketing clutter or boilerplate text.
+   - Flat crimson canvas (`#960708`) with zero gradients. Ivory paper (`#F5F2EB`) and gold seals (`#FECB6D`).
+   - Headings in **ZCOOL KuaiLe** (the logo face). Hanzi in **Noto Sans TC** bold.
+   - Ivory paper card using `frontend/public/assets/card-frame.jpg` (回纹), scaled in proportion with slightly rounded corners.
+   - Floating gold speaker for Putonghua (`zh-CN`); snail button plays the same Mandarin audio slowly. Never Cantonese.
+   - Landing page (`/`) is a quiet crimson poster: purpose copy, one gold CTA, and a hall of bouncing hanzi that scatter from the cursor.
 
 2. **Anki Spaced Repetition System (SM-2)**:
    - Full Python implementation of Anki's open-source SuperMemo-2 (SM-2) scheduling algorithm (`backend/app/core/anki_srs.py`).
@@ -38,14 +39,46 @@
 
 3. **100% English Interface**:
    - Navigation: **Flashcards**, **Characters**, **Stats**.
-   - Flashcard controls: **Previous**, **Turn around**, **Next** (unflipped state) and **Again**, **Hard**, **Medium**, **Easy** (flipped state).
-   - Character definitions localized to English (e.g. `不` → *"Not; negation"*).
+   - Flashcard modes: **Hanzi** (character → reading), **Meaning** (reading → character), **Listen** (audio → write hanzi), **Speak** (see hanzi → say it).
+   - Flashcard controls: **Previous**, **Turn around**, **Next**, and **Again**, **Hard**, **Medium**, **Easy** after a reveal.
 
 4. **Keyboard-First Experience**:
    - `Space`: Turn around / flip card.
    - `←` / `→`: Navigate Previous / Next card.
    - `1`, `2`, `3`, `4`: Submit Anki SRS rating (`Again`, `Hard`, `Medium`, `Easy`).
-   - `R`: Listen to audio pronunciation.
+   - `R`: Play Mandarin audio. `Shift+R`: play slowly.
+
+---
+
+## 📁 Project structure
+
+Brand images live only in `frontend/public/`. Scratch SVGs (`2.svg`, `3.svg`, `test_logo.svg`) and screenshot PNGs are gone.
+
+```
+DuiChinese/
+├── backend/                 FastAPI + SM-2 + HSK seed
+│   ├── app/
+│   │   ├── api/endpoints/   characters, practice, pronunciation, seed
+│   │   ├── core/            config, Anki SRS
+│   │   ├── data/            HSK 1 seed
+│   │   ├── db/
+│   │   ├── models/
+│   │   └── schemas/
+│   └── tests/
+├── frontend/                Vite + React 19 + Tailwind + shadcn
+│   ├── public/
+│   │   ├── favicon.svg
+│   │   ├── apple-touch-icon.svg
+│   │   ├── site.webmanifest
+│   │   └── assets/logo.svg  wordmark (对 dui chinese!)
+│   └── src/
+│       ├── components/      AppShell, HanziCard, BrandLogo, ui/
+│       ├── pages/           landing, flashcards, characters, stats
+│       ├── lib/             api, speech, recognition, study modes
+│       ├── data/            offline HSK 1 deck
+│       └── hooks/
+└── docs/                    API + architecture
+```
 
 ---
 
@@ -99,7 +132,7 @@ npm run dev
 # Backend test verification (21 tests)
 cd backend && source venv/bin/activate && pytest -v
 
-# Frontend test & build verification (8 tests)
+# Frontend test & build verification
 cd frontend && npm run test:run && npm run build
 ```
 

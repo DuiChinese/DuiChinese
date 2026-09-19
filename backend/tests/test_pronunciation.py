@@ -15,6 +15,20 @@ def test_evaluate_pronunciation_correct(client):
     assert "pitch_pattern" in data["tone_info"]
 
 
+def test_evaluate_pronunciation_accepts_pinyin(client):
+    payload = {
+        "target_hanzi": "好",
+        "target_pinyin": "hǎo",
+        "target_tone": 3,
+        "spoken_text": "hao"
+    }
+    response = client.post("/api/pronunciation/evaluate", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["is_match"] is True
+    assert data["score"] == 100
+
+
 def test_evaluate_pronunciation_incorrect(client):
     payload = {
         "target_hanzi": "师",
@@ -28,4 +42,3 @@ def test_evaluate_pronunciation_incorrect(client):
     assert data["is_match"] is False
     assert data["score"] < 100
     assert len(data["tips"]) > 0
-

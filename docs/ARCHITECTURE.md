@@ -5,9 +5,9 @@
 DuiChinese está diseñado como una aplicación web desacoplada en dos capas:
 
 ```
-[ Cliente Web / Móvil ] (Vite + React 18)
+[ Cliente Web / Móvil ] (Vite + React 19)
         │
-        ▼ HTTP (REST / JSON)
+    ▼ HTTP (REST / JSON)
 [ Servidor API FastAPI ] (Python 3.9+)
         │
         ▼ SQLAlchemy ORM (asyncpg / psycopg)
@@ -18,12 +18,15 @@ DuiChinese está diseñado como una aplicación web desacoplada en dos capas:
 
 ## Componentes del Frontend
 
-- **`Navbar`**: Navegación principal con imagen de marca `logo-full.svg`, contador de progreso y acceso a la guía de tonos.
-- **`HeroSection`**: Portada visual orientada a conversión y práctica inmediata.
-- **`FlashcardDeck`**: Experiencia de tarjetas 3D con volteo (`transform-style: preserve-3d`), audio nativo (`speechSynthesis`) y atajos de teclado.
-- **`PronunciationCoach`**: Entrenador fonético con captura de audio mediante `Web Speech API` (`zh-CN`), evaluación de coincidencia de caracter y análisis de tonos.
-- **`CharacterGrid`**: Buscador dinámico por pinyin, hanzi o español, y filtrado por cualquiera de los 5 tonos.
-- **`ToneGuideModal`**: Modal didáctico con ejemplos auditivos de las curvas melódicas chinas.
+- **`AppShell`**: Lienzo carmesí, wordmark `public/assets/logo.svg` y navegación en pastillas oro.
+- **`LandingPage`**: Cartel carmesí con el objetivo del producto, un CTA a Flashcards y un campo de hanzi que rebotan y reaccionan al cursor (`HanziDrift`).
+- **`FlashcardsPage`**: Cuatro modos (`hanzi`, `meaning`, `listen`, `speak`) con SRS Anki.
+- **`HanziCard`**: Foto de marco 回纹 a proporción (`public/assets/card-frame.jpg`), esquinas ligeramente redondeadas, audio nativo y volteo.
+- **Voz**: `lib/speech.ts` usa Putonghua (`zh-CN`, nunca cantonés). El altavoz reproduce a velocidad normal y el caracol más despacio. `lib/recognition.ts` escucha en `zh-CN`.
+- **`CharactersPage`**: Búsqueda por hanzi, pinyin o meaning, y filtro por tono.
+- **`StatsPage`**: Contadores de repaso.
+
+Marca en `frontend/public/`: `favicon.svg`, `apple-touch-icon.svg`, `site.webmanifest`, `assets/logo.svg`. No hay imágenes sueltas en la raíz ni en `src/assets`.
 
 ---
 
@@ -37,6 +40,5 @@ DuiChinese está diseñado como una aplicación web desacoplada en dos capas:
 - **`app.api.endpoints`**:
   - `characters`: Listado, búsqueda, filtrado por tono y detalle.
   - `practice`: Registro de repasos y estadísticas de progreso.
-  - `pronunciation`: Motor de comparación fonética y asistencia tonal.
+  - `pronunciation`: Motor de comparación fonética (hanzi o pinyin) y asistencia tonal.
   - `seed`: Poblado de los 15 caracteres iniciales de HSK 1.
-

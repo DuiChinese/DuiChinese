@@ -75,7 +75,7 @@ Devuelve las estadísticas acumuladas de estudio:
 ## 3. Pronunciación y Voz (`/api/pronunciation`)
 
 ### `POST /api/pronunciation/evaluate`
-Evalúa la transcripción fonética de la voz del usuario frente al caracter y tono esperado.
+Evalúa la transcripción de voz. Acepta el hanzi o el pinyin sin tonos (`hao` = `hǎo`).
 
 - **Cuerpo (JSON)**:
 ```json

@@ -1,3 +1,4 @@
+import unicodedata
 from fastapi import APIRouter
 from app.schemas.pronunciation import (
     PronunciationEvaluationRequest,
@@ -36,14 +37,30 @@ TONE_METADATA = {
 }
 
 
+def fold_phonetic(text: str) -> str:
+    decomposed = unicodedata.normalize("NFD", text or "")
+    stripped = "".join(ch for ch in decomposed if unicodedata.category(ch) != "Mn")
+    return stripped.lower().replace(" ", "")
+
+
+def is_pronunciation_match(spoken: str, hanzi: str, pinyin: str) -> bool:
+    heard = (spoken or "").strip()
+    if not heard:
+        return False
+    target = (hanzi or "").strip()
+    if target and (target in heard or heard in target):
+        return True
+    return fold_phonetic(heard) == fold_phonetic(pinyin)
+
+
 @router.post("/evaluate", response_model=PronunciationEvaluationResponse)
 def evaluate_pronunciation(payload: PronunciationEvaluationRequest):
     """
     Evaluates speech recognition output against target Hanzi and Tone.
     Provides targeted tips and melodic pitch advice.
     """
-    clean_spoken = payload.spoken_text.strip().lower()
-    clean_target_hanzi = payload.target_hanzi.strip()
+    heard = payload.spoken_text.strip()
+    is_match = is_pronunciation_match(heard, payload.target_hanzi, payload.target_pinyin)
 
     tone_meta = TONE_METADATA.get(payload.target_tone, TONE_METADATA[1])
     tone_info = ToneContourInfo(
@@ -53,24 +70,22 @@ def evaluate_pronunciation(payload: PronunciationEvaluationRequest):
         pitch_pattern=tone_meta["pitch_pattern"]
     )
 
-    # Check direct match of character
-    is_match = clean_target_hanzi in clean_spoken or clean_spoken in clean_target_hanzi
-    score = 100 if is_match else (40 if len(clean_spoken) > 0 else 0)
+    score = 100 if is_match else (40 if len(heard) > 0 else 0)
 
     tips = []
     if is_match:
         feedback = f"¡Excelente pronunciación! Has articulado '{payload.target_hanzi}' ({payload.target_pinyin}) con total claridad."
         tips.append(f"Tu tono {payload.target_tone} fue reconocido de forma precisa.")
     else:
-        feedback = f"Reconocido '{clean_spoken or 'Silencio'}' en lugar de '{payload.target_hanzi}' ({payload.target_pinyin})."
+        feedback = f"Reconocido '{heard or 'Silencio'}' en lugar de '{payload.target_hanzi}' ({payload.target_pinyin})."
         tips.append(f"Recuerda el perfil tonal: {tone_meta['pitch_pattern']}.")
-        tips.append(tone_meta['description_es'])
+        tips.append(tone_meta["description_es"])
         tips.append("Consejo: Abre la boca con mayor claridad y prolonga ligeramente la vocal principal.")
 
     return PronunciationEvaluationResponse(
         is_match=is_match,
         score=score,
-        recognized_text=clean_spoken,
+        recognized_text=heard,
         target_hanzi=payload.target_hanzi,
         target_pinyin=payload.target_pinyin,
         target_tone=payload.target_tone,

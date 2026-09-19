@@ -68,6 +68,9 @@ dist-ssr/
 data/postgres/
 postgres_data/
 
+# Local scratch (Vite scaffolds, experiments)
+tmp/
+
 # IDEs & System files
 .vscode/
 !.vscode/settings.json
