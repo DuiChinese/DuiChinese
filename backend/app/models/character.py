@@ -19,6 +19,7 @@ class Character(Base):
     radical = Column(String(20), nullable=True)
     stroke_count = Column(Integer, nullable=True)
     hsk_level = Column(Integer, default=1, index=True)
+    order_index = Column(Integer, default=0, index=True)
     mnemonic = Column(Text, nullable=True)
     examples = Column(JSON, default=list)  # list of {chinese: str, pinyin: str, meaning: str}
     created_at = Column(DateTime(timezone=True), server_default=func.now())

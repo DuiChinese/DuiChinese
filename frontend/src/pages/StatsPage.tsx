@@ -181,11 +181,11 @@ export function StatsPage() {
               </div>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
-              {/* Stacked Progress Bar */}
+              {/* Stacked Progress Bar with ZCOOL KuaiLe typography */}
               <div
                 role="progressbar"
                 aria-label="Deck distribution progress"
-                className="flex h-6 w-full overflow-hidden rounded-full bg-black/10 p-0.5 cursor-pointer"
+                className="flex h-8 w-full overflow-hidden rounded-full bg-black/15 p-0.5 cursor-pointer ring-1 ring-foreground/10"
               >
                 {CATEGORIES.map((cat, idx) => {
                   const count =
@@ -206,18 +206,24 @@ export function StatsPage() {
                       type="button"
                       onClick={() => setSelectedCategory(cat.key)}
                       style={{ width: `${p}%` }}
-                      className={`h-full ${cat.barClass} transition-opacity hover:opacity-90 ${
+                      className={`h-full ${cat.barClass} flex items-center justify-center font-kuaile text-xs text-white/95 drop-shadow-xs transition-opacity hover:opacity-90 ${
                         isFirst ? "rounded-l-full" : ""
                       } ${isLast ? "rounded-r-full" : ""} ${
                         selectedCategory === cat.key ? "ring-2 ring-foreground" : "opacity-95"
                       }`}
                       title={`${cat.label}: ${count} (${p}%)`}
-                    />
+                    >
+                      {p >= 12 ? (
+                        <span className="truncate px-1 tracking-wide">{cat.label} {p}%</span>
+                      ) : p >= 7 ? (
+                        <span className="tracking-wide">{p}%</span>
+                      ) : null}
+                    </button>
                   )
                 })}
               </div>
 
-              {/* Legend with interactive buttons */}
+              {/* Legend with interactive buttons & ZCOOL KuaiLe */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-1">
                 {CATEGORIES.map((cat) => {
                   const count =
@@ -234,15 +240,15 @@ export function StatsPage() {
                       key={cat.key}
                       type="button"
                       onClick={() => setSelectedCategory(cat.key)}
-                      className={`flex items-center gap-2 p-2 rounded-xl text-left transition-all ${
+                      className={`flex items-center gap-2 p-2.5 rounded-xl text-left transition-all ${
                         isSelected
                           ? "bg-foreground/10 font-semibold ring-1 ring-foreground/20"
-                          : "hover:bg-foreground/5 opacity-80"
+                          : "hover:bg-foreground/5 opacity-85"
                       }`}
                     >
                       <span className={`h-3 w-3 rounded-full ${cat.barClass} shrink-0`} />
-                      <span className="text-card-foreground">{cat.label}:</span>
-                      <span className="text-muted-foreground ml-auto">
+                      <span className="font-kuaile text-sm text-card-foreground tracking-wide">{cat.label}:</span>
+                      <span className="font-kuaile text-sm text-muted-foreground ml-auto">
                         {count} ({pct(count)}%)
                       </span>
                     </button>

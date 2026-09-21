@@ -23,20 +23,34 @@ def setup_test_db():
     Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
     # Seed initial test data
-    for item in INITIAL_15_CHARACTERS:
+    from app.models.srs import CardSRS
+    for idx, item in enumerate(INITIAL_15_CHARACTERS, 1):
         char = Character(
             hanzi=item["hanzi"],
             pinyin=item["pinyin"],
             pinyin_clean=item["pinyin_clean"],
             tone=item["tone"],
             meaning=item["meaning"],
-            radical=item["radical"],
-            stroke_count=item["stroke_count"],
-            hsk_level=item["hsk_level"],
-            mnemonic=item["mnemonic"],
-            examples=item["examples"]
+            radical=item.get("radical"),
+            stroke_count=item.get("stroke_count"),
+            hsk_level=item.get("hsk_level", 1),
+            order_index=item.get("order_index", idx),
+            mnemonic=item.get("mnemonic"),
+            examples=item.get("examples", [])
         )
         db.add(char)
+        db.flush()
+
+        srs = CardSRS(
+            character_id=char.id,
+            state="new",
+            reps=0,
+            lapses=0,
+            ease_factor=2.5,
+            interval_days=0,
+            is_unlocked=1 if idx <= 7 else 0
+        )
+        db.add(srs)
     db.commit()
     db.close()
     yield

@@ -7,6 +7,7 @@
 
 @theme inline {
     --font-heading: "ZCOOL KuaiLe", "Geist Variable", sans-serif;
+    --font-kuaile: "ZCOOL KuaiLe", cursive, sans-serif;
     --font-hanzi: "Noto Sans TC", "Noto Sans SC", "PingFang TC", sans-serif;
     --font-pinyin: "Noto Sans", "PingFang SC", "PingFang TC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
     --font-sans: "Geist Variable", "Noto Sans TC", sans-serif;

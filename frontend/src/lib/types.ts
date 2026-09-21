@@ -14,6 +14,8 @@ export interface Character {
   radical?: string | null
   stroke_count?: number | null
   hsk_level: number
+  order_index?: number
+  is_unlocked?: boolean
   mnemonic?: string | null
   examples?: ExampleWord[]
 }

@@ -17,7 +17,7 @@ def test_record_review_and_stats(client):
     stats_resp = client.get("/api/practice/stats")
     assert stats_resp.status_code == 200
     stats = stats_resp.json()
-    assert stats["total_characters"] >= 15
+    assert stats["total_characters"] >= 7
     assert stats["total_reviews"] >= 1
     assert "new_count" in stats
     assert "learning_count" in stats

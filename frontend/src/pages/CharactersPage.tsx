@@ -29,6 +29,11 @@ export function CharactersPage() {
   const [tone, setTone] = useState("all")
   const [openId, setOpenId] = useState<number | null>(null)
 
+  const unlockedCount = useMemo(
+    () => characters.filter((c) => c.is_unlocked).length,
+    [characters]
+  )
+
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase()
     return characters.filter((character) => {
@@ -43,12 +48,54 @@ export function CharactersPage() {
     })
   }, [characters, query, tone])
 
+  const motivationalMessage = useMemo(() => {
+    const pct = Math.round((unlockedCount / Math.max(1, characters.length)) * 100)
+    if (pct === 0) return "Start your journey today!"
+    if (pct < 10) return "Great start! Keep going!"
+    if (pct < 25) return "You are doing great! Keep building momentum!"
+    if (pct < 50) return "Fantastic progress! Keep going, you got this!"
+    if (pct < 75) return "Over halfway there! You are doing amazing!"
+    if (pct < 90) return "Almost there! Keep pushing forward!"
+    if (pct < 100) return "So close to the finish line! Final stretch!"
+    return "HSK 1 Completed! Outstanding achievement!"
+  }, [unlockedCount, characters.length])
+
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8">
+      {/* Clean HSK 1 Progress Tracker (Red & Yellow only) */}
+      <div className="w-full max-w-2xl mx-auto flex flex-col gap-2 pt-1">
+        <div className="flex flex-wrap items-center justify-between gap-1.5 font-kuaile text-xs sm:text-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-foreground/90">
+              Unlocked: <strong className="text-primary font-bold">{unlockedCount}</strong> / {characters.length}
+            </span>
+            <span className="hidden sm:inline text-primary/40">•</span>
+            <span className="text-primary font-medium tracking-wide">
+              {motivationalMessage}
+            </span>
+          </div>
+          <span className="text-primary font-bold tracking-wider ml-auto">
+            {Math.round((unlockedCount / Math.max(1, characters.length)) * 100)}%
+          </span>
+        </div>
+
+        {/* Clean Red & Yellow Progress Bar */}
+        <div className="relative flex h-5 w-full items-center overflow-hidden rounded-full bg-[#280405]/15 p-0.5 ring-1 ring-primary/25 dark:bg-[#280405]/50">
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-500"
+            style={{ width: `${Math.max(3, Math.round((unlockedCount / Math.max(1, characters.length)) * 100))}%` }}
+          />
+          {/* Milestone Target on the far right */}
+          <div className="absolute right-1 flex items-center gap-1 rounded-full bg-[#FECB6D] px-2 py-0.5 font-kuaile text-[11px] font-bold text-[#280405] shadow-xs">
+            <span>HSK 1!</span>
+          </div>
+        </div>
+      </div>
+
       <div className="flex flex-col items-center gap-3 text-center">
-        <h1 className="font-heading text-4xl">Characters</h1>
+        <h1 className="font-heading text-4xl">Characters & Vocabulary</h1>
         <p className="font-heading text-lg text-foreground/90">
-          Search the HSK 1 paper deck.
+          Search the official HSK 1 syllabus.
         </p>
       </div>
 
@@ -111,7 +158,8 @@ export function CharactersPage() {
               key={character.id}
               character={character}
               size="mini"
-              showAudio={false}
+              showAudio={true}
+              locked={!character.is_unlocked}
               flipped={openId === character.id}
               onFlip={() =>
                 setOpenId((current) =>

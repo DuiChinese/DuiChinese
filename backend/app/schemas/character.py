@@ -18,6 +18,7 @@ class CharacterBase(BaseModel):
     radical: Optional[str] = None
     stroke_count: Optional[int] = None
     hsk_level: int = 1
+    order_index: int = 0
     mnemonic: Optional[str] = None
     examples: List[ExampleWord] = []
 
@@ -28,6 +29,7 @@ class CharacterCreate(CharacterBase):
 
 class CharacterResponse(CharacterBase):
     id: int
+    is_unlocked: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 

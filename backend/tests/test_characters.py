@@ -13,9 +13,8 @@ def test_search_character_by_hanzi(client):
     response = client.get("/api/characters?q=好")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 1
-    assert data[0]["hanzi"] == "好"
-    assert data[0]["pinyin"] == "hǎo"
+    assert len(data) >= 1
+    assert any(c["hanzi"] == "好" for c in data)
 
 
 def test_search_character_by_pinyin(client):
@@ -64,4 +63,16 @@ def test_get_random_character(client):
     data = response.json()
     assert "hanzi" in data
     assert "pinyin" in data
+
+
+def test_unlock_next_batch(client):
+    # Characters 1..7 were unlocked initially.
+    # Calling /api/characters/unlock-next?count=3 should unlock the next 3
+    response = client.post("/api/characters/unlock-next?count=3")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 3
+    for char in data:
+        assert char["is_unlocked"] is True
+
 

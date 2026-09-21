@@ -16,4 +16,16 @@ describe("Characters page", () => {
     expect(screen.getByText("好")).toBeInTheDocument()
     expect(screen.queryByText("不")).not.toBeInTheDocument()
   })
+
+  it("distinguishes unlocked characters from locked ones in gray", async () => {
+    renderAt("/characters")
+
+    // Expect unlocked count counter to be visible
+    expect(await screen.findByText(/Unlocked:/i)).toBeInTheDocument()
+
+    // Characters beyond the first 7 are locked
+    const lockedIndicators = await screen.findAllByText("locked")
+    expect(lockedIndicators.length).toBeGreaterThan(0)
+  })
 })
+

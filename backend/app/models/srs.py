@@ -21,3 +21,5 @@ class CardSRS(Base):
     last_reviewed = Column(DateTime(timezone=True), nullable=True)
     stability = Column(Float, nullable=True, default=0.0)
     difficulty = Column(Float, nullable=True, default=0.0)
+    is_unlocked = Column(Integer, default=0, nullable=False)  # 1 for unlocked, 0 for locked
+

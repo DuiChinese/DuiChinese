@@ -24,6 +24,7 @@ type HanziCardProps = {
   size?: "hero" | "mini"
   showAudio?: boolean
   mode?: StudyModeId
+  locked?: boolean
 }
 
 export function HanziCard({
@@ -33,18 +34,40 @@ export function HanziCard({
   size = "hero",
   showAudio = true,
   mode = "hanzi",
+  locked = false,
 }: HanziCardProps) {
   const isHero = size === "hero"
   const hideHanzi = !flipped && (mode === "meaning" || mode === "listen")
   const showReading = flipped || (mode === "meaning" && !flipped)
-  const cardName = hideHanzi
-    ? mode === "listen"
-      ? "Listen card"
-      : character.pinyin
-    : character.hanzi
+  const cardName = locked
+    ? `${character.hanzi} (locked)`
+    : hideHanzi
+      ? mode === "listen"
+        ? "Listen card"
+        : character.pinyin
+      : character.hanzi
+
+  const hanziLength = character.hanzi.length
+  const hanziSizeClass = isHero
+    ? hanziLength <= 1
+      ? "text-7xl sm:text-8xl"
+      : hanziLength === 2
+        ? "text-5xl sm:text-6xl"
+        : "text-3xl sm:text-4xl"
+    : hanziLength <= 1
+      ? "text-5xl"
+      : hanziLength === 2
+        ? "text-3xl sm:text-4xl"
+        : "text-2xl sm:text-3xl"
 
   return (
-    <div className={cn("relative", isHero ? "w-full max-w-[34rem]" : "w-full")}>
+    <div
+      className={cn(
+        "relative transition-all duration-300",
+        isHero ? "w-full max-w-[34rem]" : "w-full",
+        locked && "grayscale-[65%] opacity-70 contrast-90 hover:opacity-95"
+      )}
+    >
       <Card
         role={onFlip ? "button" : undefined}
         tabIndex={onFlip ? 0 : undefined}
@@ -59,7 +82,7 @@ export function HanziCard({
           }
         }}
         className={cn(
-          "relative gap-0 overflow-hidden rounded-[12px] bg-transparent p-0 py-0 ring-0",
+          "relative gap-0 overflow-hidden rounded-[12px] bg-transparent p-0 py-0 ring-0 cursor-pointer",
           isHero && "shadow-[0_10px_0_0_rgba(70,0,0,0.28)]"
         )}
       >
@@ -75,6 +98,14 @@ export function HanziCard({
           draggable={false}
           className="pointer-events-none block h-auto w-full select-none"
         />
+        {locked ? (
+          <div className="absolute top-3 left-3 z-10 flex items-center rounded-full border border-[#FECB6D]/30 bg-[#280405]/85 px-2.5 py-0.5 shadow-sm backdrop-blur-sm">
+            <span className="font-kuaile text-xs tracking-wider text-[#FECB6D]">
+              locked
+            </span>
+          </div>
+        ) : null}
+
         <CardContent className="absolute inset-[11%] flex items-center justify-center p-0 sm:inset-[12%]">
           <div className="relative flex flex-col items-center text-center">
             {hideHanzi && !showReading ? (
@@ -85,8 +116,8 @@ export function HanziCard({
             {hideHanzi ? null : (
               <span
                 className={cn(
-                  "font-hanzi font-bold leading-none text-card-foreground",
-                  isHero ? "text-7xl sm:text-8xl" : "text-5xl"
+                  "font-hanzi font-bold leading-none text-card-foreground tracking-normal",
+                  hanziSizeClass
                 )}
               >
                 {character.hanzi}
@@ -104,7 +135,7 @@ export function HanziCard({
                 </span>
                 <span
                   className={cn(
-                    "text-muted-foreground",
+                    "text-muted-foreground font-sans",
                     isHero ? "text-base sm:text-lg" : "text-sm"
                   )}
                 >
@@ -119,7 +150,7 @@ export function HanziCard({
       {showAudio ? (
         <div
           className={cn(
-            "absolute flex flex-col gap-2",
+            "absolute z-20 flex flex-col gap-2",
             isHero ? "-right-14 top-5" : "-right-3 -top-3"
           )}
         >

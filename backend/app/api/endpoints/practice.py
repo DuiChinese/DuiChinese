@@ -8,6 +8,10 @@ from app.db.session import get_db
 from app.models.character import Character
 from app.models.review import FlashcardReview
 from app.models.srs import CardSRS
+from app.core.anki_srs import (
+    AnkiSRSState,
+    calculate_anki_next_review,
+)
 from app.core.fsrs import (
     FSRSState,
     calculate_fsrs_next_review,
@@ -29,8 +33,8 @@ router = APIRouter(prefix="/practice", tags=["Practice & Flashcards"])
 @router.post("/review", response_model=FlashcardReviewResponse)
 def record_review(payload: FlashcardReviewCreate, db: Session = Depends(get_db)):
     """
-    Record user flashcard interaction and calculate next schedule using modern FSRS.
-    Rating: 1 (Again), 2 (Hard), 3 (Medium / Good), 4 (Easy).
+    Record user flashcard interaction and calculate next schedule using Anki SM-2.
+    Rating: 1 (Again), 2 (Hard), 3 (Good), 4 (Easy).
     """
     if payload.rating not in (1, 2, 3, 4):
         raise HTTPException(status_code=400, detail="Rating must be between 1 and 4")
@@ -57,7 +61,20 @@ def record_review(payload: FlashcardReviewCreate, db: Session = Depends(get_db))
         db.add(card_srs)
         db.flush()
 
-    current_state = FSRSState(
+    current_anki_state = AnkiSRSState(
+        state=card_srs.state or "new",
+        reps=card_srs.reps or 0,
+        lapses=card_srs.lapses or 0,
+        ease_factor=card_srs.ease_factor or 2.50,
+        interval_days=card_srs.interval_days or 0,
+        due_date=card_srs.due_date,
+        last_reviewed=card_srs.last_reviewed,
+    )
+
+    now = datetime.now(timezone.utc)
+    updated_anki = calculate_anki_next_review(current_anki_state, payload.rating, now=now)
+
+    current_fsrs_state = FSRSState(
         state=card_srs.state or "new",
         reps=card_srs.reps or 0,
         lapses=card_srs.lapses or 0,
@@ -67,29 +84,20 @@ def record_review(payload: FlashcardReviewCreate, db: Session = Depends(get_db))
         due_date=card_srs.due_date,
         last_reviewed=card_srs.last_reviewed,
     )
+    updated_fsrs = calculate_fsrs_next_review(current_fsrs_state, payload.rating, now=now)
 
-    now = datetime.now(timezone.utc)
-    updated_state = calculate_fsrs_next_review(current_state, payload.rating, now=now)
+    # Update CardSRS with Anki SM-2 parameters and FSRS stats
+    card_srs.state = updated_anki.state
+    card_srs.reps = updated_anki.reps
+    card_srs.lapses = updated_anki.lapses
+    card_srs.ease_factor = updated_anki.ease_factor
+    card_srs.interval_days = updated_anki.interval_days
+    card_srs.due_date = updated_anki.due_date
+    card_srs.last_reviewed = updated_anki.last_reviewed
+    card_srs.stability = updated_fsrs.stability
+    card_srs.difficulty = updated_fsrs.difficulty
 
-    # Update CardSRS with FSRS parameters
-    card_srs.state = updated_state.state
-    card_srs.reps = updated_state.reps
-    card_srs.lapses = updated_state.lapses
-    card_srs.stability = updated_state.stability
-    card_srs.difficulty = updated_state.difficulty
-    card_srs.interval_days = updated_state.interval_days
-    card_srs.due_date = updated_state.due_date
-    card_srs.last_reviewed = updated_state.last_reviewed
-
-    # Update ease_factor for backwards compatibility with SM-2 inspectors
-    if payload.rating == 1:
-        card_srs.ease_factor = max(1.3, round((card_srs.ease_factor or 2.5) - 0.20, 2))
-    elif payload.rating == 2:
-        card_srs.ease_factor = max(1.3, round((card_srs.ease_factor or 2.5) - 0.15, 2))
-    elif payload.rating == 4:
-        card_srs.ease_factor = round((card_srs.ease_factor or 2.5) + 0.15, 2)
-
-    status = "mastered" if updated_state.interval_days >= MATURE_INTERVAL_THRESHOLD_DAYS or payload.rating >= 3 else "learning"
+    status = "mastered" if updated_anki.state == "mastered" or (updated_anki.interval_days >= 14 and updated_anki.reps >= 3) else "learning"
 
     review = FlashcardReview(
         character_id=payload.character_id,
@@ -107,8 +115,8 @@ def record_review(payload: FlashcardReviewCreate, db: Session = Depends(get_db))
         rating=review.rating,
         interval_days=card_srs.interval_days,
         ease_factor=card_srs.ease_factor,
-        stability=card_srs.stability,
-        difficulty=card_srs.difficulty,
+        stability=card_srs.stability or 0.0,
+        difficulty=card_srs.difficulty or 0.0,
         reps=card_srs.reps,
         lapses=card_srs.lapses,
         due_date=card_srs.due_date,
@@ -118,37 +126,92 @@ def record_review(payload: FlashcardReviewCreate, db: Session = Depends(get_db))
 @router.get("/due", response_model=List[CharacterResponse])
 def get_due_characters(limit: int = 20, db: Session = Depends(get_db)):
     """
-    Get characters due for review according to FSRS.
-    Includes overdue/due cards first (ordered by due date), then unstudied (new) cards.
+    Get unlocked cards due for review according to Anki SRS:
+    1. Cards that were difficult or lapsed before (relearning/learning or lapses > 0 or due_date <= now).
+    2. New unlocked words of the day (reps == 0).
+    If all reviews and new words are graduated for today, returns empty list [].
     """
     now = datetime.now(timezone.utc)
 
-    # 1. Cards that are due or overdue
-    due_srs = db.query(CardSRS).filter(
-        CardSRS.due_date <= now
-    ).order_by(CardSRS.due_date.asc()).limit(limit).all()
+    # 1. Cards that are unlocked AND due or were difficult before
+    difficult_due_srs = db.query(CardSRS).filter(
+        CardSRS.is_unlocked == 1,
+        (CardSRS.due_date <= now) | (CardSRS.state.in_(["learning", "relearning"])) | (CardSRS.lapses > 0)
+    ).order_by(
+        CardSRS.due_date.asc().nullsfirst(),
+        CardSRS.lapses.desc()
+    ).limit(limit).all()
 
-    due_char_ids = [s.character_id for s in due_srs]
+    due_char_ids = [s.character_id for s in difficult_due_srs]
     characters_due = []
     if due_char_ids:
         chars_map = {c.id: c for c in db.query(Character).filter(Character.id.in_(due_char_ids)).all()}
         characters_due = [chars_map[cid] for cid in due_char_ids if cid in chars_map]
 
-    # If we haven't reached limit, add characters that haven't been studied yet (new)
+    # 2. Unstudied (new) UNLOCKED cards of the day (reps == 0)
     if len(characters_due) < limit:
-        studied_ids = [s[0] for s in db.query(CardSRS.character_id).filter(CardSRS.reps > 0).all()]
         remaining = limit - len(characters_due)
-        query = db.query(Character)
-        if studied_ids:
-            query = query.filter(~Character.id.in_(studied_ids))
-        new_chars = query.limit(remaining).all()
-        characters_due.extend(new_chars)
+        unstudied_unlocked_srs = db.query(CardSRS).filter(
+            CardSRS.is_unlocked == 1,
+            CardSRS.reps == 0,
+            ~CardSRS.character_id.in_(due_char_ids)
+        ).limit(remaining).all()
 
-    # If still empty (all reviewed and none due), return characters for review practice
-    if not characters_due:
-        characters_due = db.query(Character).limit(limit).all()
+        unstudied_ids = [s.character_id for s in unstudied_unlocked_srs]
+        if unstudied_ids:
+            chars_map = {c.id: c for c in db.query(Character).filter(Character.id.in_(unstudied_ids)).all()}
+            characters_due.extend([chars_map[cid] for cid in unstudied_ids if cid in chars_map])
 
-    return characters_due
+    # Convert to CharacterResponse with is_unlocked=True
+    return [
+        CharacterResponse(
+            id=c.id,
+            hanzi=c.hanzi,
+            pinyin=c.pinyin,
+            pinyin_clean=c.pinyin_clean,
+            tone=c.tone,
+            meaning=c.meaning,
+            radical=c.radical,
+            stroke_count=c.stroke_count,
+            hsk_level=c.hsk_level,
+            order_index=c.order_index or c.id,
+            mnemonic=c.mnemonic,
+            examples=c.examples or [],
+            is_unlocked=True,
+        )
+        for c in characters_due
+    ]
+
+
+@router.get("/ahead", response_model=List[CharacterResponse])
+def get_practice_ahead_characters(limit: int = 20, db: Session = Depends(get_db)):
+    """
+    Get already unlocked cards for extra review practice ('Seguir repasando').
+    """
+    unlocked_srs = db.query(CardSRS).filter(CardSRS.is_unlocked == 1).order_by(CardSRS.last_reviewed.asc().nullsfirst()).limit(limit).all()
+    unlocked_ids = [s.character_id for s in unlocked_srs]
+    if not unlocked_ids:
+        return []
+    chars_map = {c.id: c for c in db.query(Character).filter(Character.id.in_(unlocked_ids)).all()}
+    return [
+        CharacterResponse(
+            id=c.id,
+            hanzi=c.hanzi,
+            pinyin=c.pinyin,
+            pinyin_clean=c.pinyin_clean,
+            tone=c.tone,
+            meaning=c.meaning,
+            radical=c.radical,
+            stroke_count=c.stroke_count,
+            hsk_level=c.hsk_level,
+            order_index=c.order_index or c.id,
+            mnemonic=c.mnemonic,
+            examples=c.examples or [],
+            is_unlocked=True,
+        )
+        for cid in unlocked_ids if cid in chars_map for c in [chars_map[cid]]
+    ]
+
 
 
 @router.get("/stats", response_model=StatsResponse)
@@ -177,7 +240,11 @@ def get_practice_stats(db: Session = Depends(get_db)):
 
     for char in all_characters:
         srs = all_srs.get(char.id)
-        if not srs or (srs.reps == 0 and srs.state == "new"):
+        # Locked characters must not be counted until unlocked
+        if not srs or not srs.is_unlocked:
+            continue
+
+        if srs.reps == 0 and srs.state == "new":
             cat_new.append(
                 CategoryCharacterItem(
                     id=char.id,
@@ -234,22 +301,24 @@ def get_practice_stats(db: Session = Depends(get_db)):
     learning_count = len(cat_learning)
     young_count = len(cat_young)
     mature_count = len(cat_mature)
+    total_unlocked = new_count + learning_count + young_count + mature_count
 
-    # Due today count
+    # Due today count (only unlocked cards)
     due_today_count = db.query(CardSRS).filter(
+        CardSRS.is_unlocked == 1,
         CardSRS.due_date <= now
     ).count()
 
-    # Average ease factor
-    avg_ease = db.query(func.avg(CardSRS.ease_factor)).scalar() or 2.5
+    # Average ease factor (only unlocked)
+    avg_ease = db.query(func.avg(CardSRS.ease_factor)).filter(CardSRS.is_unlocked == 1).scalar() or 2.5
     avg_ease = round(float(avg_ease), 2)
 
-    # Average FSRS stability (in days)
-    avg_stability = db.query(func.avg(CardSRS.stability)).filter(CardSRS.stability > 0).scalar() or 0.0
+    # Average FSRS stability (in days, only unlocked)
+    avg_stability = db.query(func.avg(CardSRS.stability)).filter(CardSRS.is_unlocked == 1, CardSRS.stability > 0).scalar() or 0.0
     avg_stability = round(float(avg_stability), 1)
 
-    # Average FSRS difficulty (scale 1 - 10)
-    avg_difficulty = db.query(func.avg(CardSRS.difficulty)).filter(CardSRS.difficulty > 0).scalar() or 0.0
+    # Average FSRS difficulty (scale 1 - 10, only unlocked)
+    avg_difficulty = db.query(func.avg(CardSRS.difficulty)).filter(CardSRS.is_unlocked == 1, CardSRS.difficulty > 0).scalar() or 0.0
     avg_difficulty = round(float(avg_difficulty), 1)
 
     # Retention rate (% of reviews rated 3 or 4)
@@ -257,7 +326,7 @@ def get_practice_stats(db: Session = Depends(get_db)):
     retention_rate = round((successful_reviews / total_reviews * 100), 1) if total_reviews > 0 else 100.0
 
     return StatsResponse(
-        total_characters=total_characters,
+        total_characters=total_unlocked,
         total_reviews=total_reviews,
         new_count=new_count,
         learning_count=learning_count,

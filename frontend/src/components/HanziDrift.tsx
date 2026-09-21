@@ -47,19 +47,15 @@ export function HanziDrift() {
       const top = header
         ? Math.max(0, Math.round(header.getBoundingClientRect().bottom))
         : 0
-      layer.style.top = `${top}px`
+      container.style.top = `${top}px`
     }
 
     function spawn() {
-<<<<<<< Updated upstream
-      width = container.clientWidth || 800
-      height = container.clientHeight || 600
-=======
       pinToViewport()
-      const hallTop = parseInt(layer.style.top, 10) || 0
-      const nextWidth = layer.clientWidth || window.innerWidth || 800
+      const hallTop = parseInt(container.style.top, 10) || 0
+      const nextWidth = container.clientWidth || window.innerWidth || 800
       const nextHeight =
-        layer.clientHeight || Math.max(window.innerHeight - hallTop, 1)
+        container.clientHeight || Math.max(window.innerHeight - hallTop, 1)
       if (
         particles.length > 0 &&
         nextWidth === width &&
@@ -70,7 +66,6 @@ export function HanziDrift() {
 
       width = nextWidth
       height = nextHeight
->>>>>>> Stashed changes
       const count = quiet ? 12 : hanziCountForWidth(width)
       particles = createHanziField(width, height, count)
       container.replaceChildren()
@@ -114,14 +109,10 @@ export function HanziDrift() {
       typeof ResizeObserver === "function"
         ? new ResizeObserver(() => spawn())
         : null
-<<<<<<< Updated upstream
     observer?.observe(container)
-=======
-    observer?.observe(layer)
     const header = document.querySelector("[data-app-header]")
     if (header) observer?.observe(header)
     window.addEventListener("resize", spawn)
->>>>>>> Stashed changes
     window.addEventListener("pointermove", onPointerMove, { passive: true })
     window.addEventListener("pointerleave", onPointerLeave)
 

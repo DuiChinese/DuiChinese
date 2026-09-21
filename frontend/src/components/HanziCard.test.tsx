@@ -31,4 +31,17 @@ describe("HanziCard", () => {
     expect(pinyinEl).toBeInTheDocument()
     expect(pinyinEl).toHaveClass("font-pinyin")
   })
+
+  it("allows flipping a locked card and displays the locked badge", async () => {
+    const user = userEvent.setup()
+    const onFlip = vi.fn()
+
+    render(
+      <HanziCard character={HSK1_CHARACTERS[0]} locked={true} flipped={false} onFlip={onFlip} />
+    )
+
+    expect(screen.getByText("locked")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "不 (locked)" }))
+    expect(onFlip).toHaveBeenCalled()
+  })
 })
