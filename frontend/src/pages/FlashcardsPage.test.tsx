@@ -110,5 +110,21 @@ describe("Flashcards page", () => {
     // Next batch is loaded into study session (contains 你好)
     expect(await screen.findByText("你好")).toBeInTheDocument()
   })
+
+  it("flips the card when pressing the Space key", async () => {
+    const user = userEvent.setup()
+    renderAt("/flashcards")
+
+    expect(await screen.findByText("不")).toBeInTheDocument()
+    expect(screen.queryByText("bù")).not.toBeInTheDocument()
+
+    // Press Space to flip
+    await user.keyboard(" ")
+    expect(screen.getByText("bù")).toBeInTheDocument()
+
+    // Press Space again to unflip
+    await user.keyboard(" ")
+    expect(screen.queryByText("bù")).not.toBeInTheDocument()
+  })
 })
 

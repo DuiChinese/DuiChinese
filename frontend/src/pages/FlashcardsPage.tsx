@@ -1,6 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useState } from "react"
 import { useSearchParams } from "react-router-dom"
-import { CheckCircle2Icon, CircleAlertIcon, MicIcon, SparklesIcon, UnlockIcon, RotateCcwIcon } from "lucide-react"
+import { CheckCircle2Icon, CircleAlertIcon, MicIcon, UnlockIcon, RotateCcwIcon } from "lucide-react"
 
 import { HanziCard } from "@/components/HanziCard"
 import { StudyModeSwitch } from "@/components/StudyModeSwitch"
@@ -214,10 +214,23 @@ export function FlashcardsPage() {
       const target = event.target as HTMLElement | null
       if (target && ["INPUT", "TEXTAREA"].includes(target.tagName)) return
 
-      if (event.key === " " || event.key === "Spacebar") {
+      const isSpace =
+        event.code === "Space" ||
+        event.key === " " ||
+        event.key === "Spacebar" ||
+        event.keyCode === 32
+
+      if (isSpace) {
         event.preventDefault()
+        event.stopPropagation()
+        if (target && typeof target.blur === "function") {
+          target.blur()
+        }
         setFlipped((value) => !value)
-      } else if (event.key === "ArrowLeft") {
+        return
+      }
+
+      if (event.key === "ArrowLeft") {
         event.preventDefault()
         goTo(-1)
       } else if (event.key === "ArrowRight") {
@@ -300,33 +313,31 @@ export function FlashcardsPage() {
   // Daily SRS completion screen
   if (sessionCompleted || !character) {
     return (
-      <section className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center gap-8 px-4 py-12 text-center">
-        <div className="flex size-20 items-center justify-center rounded-full border-2 border-primary/40 bg-card/80 shadow-lg">
-          <SparklesIcon className="size-10 text-primary" />
-        </div>
-
-        <div className="flex flex-col items-center gap-3">
-          <h2 className="font-heading text-4xl text-foreground sm:text-5xl">
+      <section className="relative h-full w-full select-none">
+        {/* Center: Completion text centered on the red tapete in glowing yellow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex w-full max-w-lg flex-col items-center gap-3 px-4 text-center">
+          <h2 className="font-heading text-4xl text-[#FECB6D] drop-shadow-sm sm:text-5xl tracking-wide">
             That's all for today!
           </h2>
-          <p className="max-w-md text-base leading-relaxed text-foreground/90 sm:text-lg">
+          <p className="max-w-md text-base leading-relaxed text-[#F5D7A0] sm:text-lg">
             You have thoroughly reviewed and consolidated all cards scheduled for today
             respecting the spaced repetition algorithm (multi-pass confirmation).
           </p>
           {sessionReviewCount > 0 ? (
-            <p className="rounded-full bg-primary/20 px-4 py-1 text-sm font-medium text-foreground">
+            <p className="rounded-full bg-[#FECB6D]/20 border border-[#FECB6D]/40 px-4 py-1 text-sm font-medium text-[#FECB6D]">
               {sessionReviewCount} {sessionReviewCount === 1 ? "review completed" : "reviews completed"} in this session
             </p>
           ) : null}
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-4">
+        {/* Bottom: Buttons resting comfortably below the red tapete on marble */}
+        <div className="absolute top-[78%] left-0 right-0 flex flex-wrap items-center justify-center gap-4 px-4 z-20">
           <Button
             type="button"
             variant="secondary"
             size="pill"
             onClick={handlePracticeAhead}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 border border-[#960708]/15 shadow-sm bg-[#F5F2EB] text-[#7A0607]"
           >
             <RotateCcwIcon className="size-4" />
             Keep reviewing
@@ -334,11 +345,11 @@ export function FlashcardsPage() {
 
           <Button
             type="button"
-            variant="default"
+            variant="secondary"
             size="pill"
             disabled={unlocking}
             onClick={handleUnlockNext}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 border border-[#960708]/15 shadow-sm bg-[#F5F2EB] text-[#7A0607]"
           >
             <UnlockIcon className="size-4" />
             {unlocking ? "Unlocking…" : "Unlock tomorrow's cards (+7)"}
@@ -349,130 +360,142 @@ export function FlashcardsPage() {
   }
 
   return (
-    <section className="flex flex-1 flex-col items-center justify-center gap-6">
-      <div className="flex max-w-xl flex-col items-center gap-2 text-center">
-        <StudyModeSwitch value={mode} onChange={setMode} />
-        <p className="font-heading text-lg text-foreground/90">{modeMeta.hint}</p>
-      </div>
+    <section className="relative h-full w-full select-none">
+      {/* 1. TOP MARBLE ZONE: Study mode switcher and Session progress bar */}
+      <div className="absolute top-13 sm:top-15 left-0 right-0 flex flex-col items-center gap-1 px-4 z-20">
+        <div className="flex max-w-xl flex-col items-center gap-0.5 text-center">
+          <StudyModeSwitch value={mode} onChange={setMode} />
+          <p className="font-heading text-xs sm:text-sm text-[#7A0607] font-medium">{modeMeta.hint}</p>
+        </div>
 
-      {/* Session Multi-Pass Consolidation Progress Bar with ZCOOL KuaiLe */}
-      <div className="flex w-full max-w-[34rem] flex-col gap-1.5 px-2">
-        <div className="flex items-center justify-between font-kuaile text-xs text-foreground/85">
-          <div className="flex items-center gap-2">
-            <span
-              className={cn(
-                "inline-block size-2.5 rounded-full ring-2 ring-background transition-all",
-                currentStep === 0
-                  ? "bg-[#FECB6D] animate-pulse"
-                  : "bg-primary"
-              )}
-            />
-            <span className="tracking-wide">
-              {currentStep === 0 ? "Pass 1 of 2: Initial Recall" : "Pass 2 of 2: Consolidation Check"}
+        {/* Session Multi-Pass Consolidation Progress Bar with ZCOOL KuaiLe */}
+        <div className="flex w-full max-w-[26rem] flex-col gap-1 px-2 mt-0.5">
+          <div className="flex items-center justify-between font-kuaile text-[11px] sm:text-xs text-[#7A0607]">
+            <div className="flex items-center gap-1.5">
+              <span
+                className={cn(
+                  "inline-block size-2 rounded-full ring-1 ring-background transition-all",
+                  currentStep === 0
+                    ? "bg-[#7A0607] animate-pulse"
+                    : "bg-primary"
+                )}
+              />
+              <span className="tracking-wide font-semibold text-[#7A0607]">
+                {currentStep === 0 ? "Pass 1 of 2: Initial Recall" : "Pass 2 of 2: Consolidation Check"}
+              </span>
+            </div>
+            <span className="text-[#7A0607]/80 tracking-wide font-medium">
+              {masteredCount} of {totalCards} mastered · {count} in queue
             </span>
           </div>
-          <span className="text-muted-foreground tracking-wide">
-            {masteredCount} of {totalCards} mastered · {count} in queue
-          </span>
-        </div>
-        <div className="h-2.5 w-full overflow-hidden rounded-full bg-secondary/80 ring-1 ring-foreground/10 p-0.5">
-          <div
-            className="h-full bg-primary transition-all duration-300 rounded-full"
-            style={{ width: `${Math.round((masteredCount / Math.max(1, totalCards)) * 100)}%` }}
-          />
+          <div className="h-2 w-full overflow-hidden rounded-full bg-[#280405]/15 ring-1 ring-foreground/15 p-0.5">
+            <div
+              className="h-full bg-primary transition-all duration-300 rounded-full"
+              style={{ width: `${Math.round((masteredCount / Math.max(1, totalCards)) * 100)}%` }}
+            />
+          </div>
         </div>
       </div>
 
-      <HanziCard
-        character={character}
-        flipped={flipped}
-        mode={mode}
-        onFlip={() => setFlipped((value) => !value)}
-      />
+      {/* 2. CENTER RED TAPETE ZONE: Flashcard anchored at exactly 50% vertical center */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center z-10 pointer-events-auto">
+        <HanziCard
+          character={character}
+          flipped={flipped}
+          mode={mode}
+          onFlip={() => setFlipped((value) => !value)}
+        />
+      </div>
 
-      {mode === "listen" && !flipped ? (
-        <form
-          onSubmit={checkHeardCharacter}
-          className="flex w-full max-w-md flex-col items-center gap-3"
-        >
-          <FieldGroup className="w-full">
-            <Field>
-              <FieldLabel htmlFor="heard-hanzi">Character you heard</FieldLabel>
-              <Input
-                id="heard-hanzi"
-                value={guess}
-                onChange={(event) => setGuess(event.target.value)}
-                autoComplete="off"
-                placeholder="Write the hanzi"
-                className="h-12 rounded-full border-transparent bg-secondary px-5 text-center text-xl text-secondary-foreground"
-              />
-            </Field>
-          </FieldGroup>
-          <Button type="submit" variant="secondary" size="pill">
-            Check
+      {/* 3. BOTTOM MARBLE ZONE: Resting comfortably below the red tapete */}
+      <div className="absolute top-[78%] left-0 right-0 flex flex-col items-center gap-2 px-4 z-20">
+        {mode === "listen" && !flipped ? (
+          <form
+            onSubmit={checkHeardCharacter}
+            className="flex w-full max-w-xs flex-col items-center gap-1.5 mb-1"
+          >
+            <FieldGroup className="w-full">
+              <Field>
+                <FieldLabel htmlFor="heard-hanzi" className="sr-only">Character you heard</FieldLabel>
+                <Input
+                  id="heard-hanzi"
+                  value={guess}
+                  onChange={(event) => setGuess(event.target.value)}
+                  autoComplete="off"
+                  placeholder="Write the hanzi"
+                  className="h-8 rounded-full border-transparent bg-secondary px-4 text-center text-base text-secondary-foreground"
+                />
+              </Field>
+            </FieldGroup>
+            <Button type="submit" variant="secondary" size="xs" className="px-5">
+              Check
+            </Button>
+          </form>
+        ) : null}
+
+        {mode === "speak" && canRecognizeSpeech() ? (
+          <Button
+            type="button"
+            variant="secondary"
+            size="xs"
+            disabled={listening}
+            onClick={() => void captureSpeech()}
+            className="mb-1"
+          >
+            <MicIcon data-icon="inline-start" />
+            {listening ? "Listening…" : "Say it"}
           </Button>
-        </form>
-      ) : null}
+        ) : null}
 
-      {mode === "speak" && canRecognizeSpeech() ? (
-        <Button
-          type="button"
-          variant="secondary"
-          size="pill"
-          disabled={listening}
-          onClick={() => void captureSpeech()}
-        >
-          <MicIcon data-icon="inline-start" />
-          {listening ? "Listening…" : "Say it"}
-        </Button>
-      ) : null}
+        {mode === "speak" && !flipped ? (
+          <form
+            onSubmit={checkSpokenPinyin}
+            className="flex w-full max-w-xs flex-col items-center gap-1.5 mb-1"
+          >
+            <p className="text-xs text-[#7A0607]/80 text-center font-medium">
+              {canRecognizeSpeech()
+                ? "Or type the pinyin you said."
+                : recognitionFallbackHint()}
+            </p>
+            <FieldGroup className="w-full">
+              <Field>
+                <FieldLabel htmlFor="spoken-pinyin" className="sr-only">Pinyin you said</FieldLabel>
+                <Input
+                  id="spoken-pinyin"
+                  value={guess}
+                  onChange={(event) => setGuess(event.target.value)}
+                  autoComplete="off"
+                  placeholder="hao"
+                  className="h-8 rounded-full border-transparent bg-secondary px-4 text-center text-base text-secondary-foreground"
+                />
+              </Field>
+            </FieldGroup>
+            <Button type="submit" variant="secondary" size="xs" className="px-5">
+              Check
+            </Button>
+          </form>
+        ) : null}
 
-      {mode === "speak" && !flipped ? (
-        <form
-          onSubmit={checkSpokenPinyin}
-          className="flex w-full max-w-md flex-col items-center gap-3"
-        >
-          <p className="max-w-md text-center text-sm text-muted-foreground">
-            {canRecognizeSpeech()
-              ? "Or type the pinyin you said."
-              : recognitionFallbackHint()}
-          </p>
-          <FieldGroup className="w-full">
-            <Field>
-              <FieldLabel htmlFor="spoken-pinyin">Pinyin you said</FieldLabel>
-              <Input
-                id="spoken-pinyin"
-                value={guess}
-                onChange={(event) => setGuess(event.target.value)}
-                autoComplete="off"
-                placeholder="hao"
-                className="h-12 rounded-full border-transparent bg-secondary px-5 text-center text-xl text-secondary-foreground"
-              />
-            </Field>
-          </FieldGroup>
-          <Button type="submit" variant="secondary" size="pill">
-            Check
-          </Button>
-        </form>
-      ) : null}
+        {feedback ? (
+          <Alert className="max-w-md py-1 px-3 rounded-xl mb-1">
+            {feedback.ok ? <CheckCircle2Icon className="size-3.5" /> : <CircleAlertIcon className="size-3.5" />}
+            <AlertTitle className="text-xs font-bold">{feedback.title}</AlertTitle>
+            <AlertDescription className="text-[11px]">{feedback.body}</AlertDescription>
+          </Alert>
+        ) : null}
 
-      {feedback ? (
-        <Alert className="max-w-md rounded-3xl">
-          {feedback.ok ? <CheckCircle2Icon /> : <CircleAlertIcon />}
-          <AlertTitle>{feedback.title}</AlertTitle>
-          <AlertDescription>{feedback.body}</AlertDescription>
-        </Alert>
-      ) : null}
-
-      <div className="flex flex-col items-center gap-4">
-        <div className="flex flex-wrap items-center justify-center gap-3">
+        {/* Row 1: < Turn around > */}
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
           <Button
             type="button"
             variant="secondary"
             size="pill"
             aria-label="Previous"
-            className="w-12 h-10 px-0 flex items-center justify-center font-bold text-lg"
-            onClick={() => goTo(-1)}
+            className="w-10 h-9 px-0 flex items-center justify-center font-bold text-base border border-[#960708]/15 shadow-sm bg-[#F5F2EB] text-[#7A0607]"
+            onClick={(event) => {
+              event.currentTarget.blur()
+              goTo(-1)
+            }}
           >
             &lt;
           </Button>
@@ -480,7 +503,11 @@ export function FlashcardsPage() {
             type="button"
             variant="secondary"
             size="pill"
-            onClick={() => setFlipped((value) => !value)}
+            className="h-9 px-6 text-sm font-semibold border border-[#960708]/15 shadow-sm bg-[#F5F2EB] text-[#7A0607]"
+            onClick={(event) => {
+              event.currentTarget.blur()
+              setFlipped((value) => !value)
+            }}
           >
             Turn around
           </Button>
@@ -489,15 +516,19 @@ export function FlashcardsPage() {
             variant="secondary"
             size="pill"
             aria-label="Next"
-            className="w-12 h-10 px-0 flex items-center justify-center font-bold text-lg"
-            onClick={() => goTo(1)}
+            className="w-10 h-9 px-0 flex items-center justify-center font-bold text-base border border-[#960708]/15 shadow-sm bg-[#F5F2EB] text-[#7A0607]"
+            onClick={(event) => {
+              event.currentTarget.blur()
+              goTo(1)
+            }}
           >
             &gt;
           </Button>
         </div>
 
+        {/* Row 2: Difficulty ratings right below Turn around */}
         {flipped ? (
-          <div className="flex flex-wrap items-center justify-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
             {RATINGS.map((item) => (
               <Button
                 key={item.rating}
@@ -505,11 +536,14 @@ export function FlashcardsPage() {
                 variant="secondary"
                 size="pill"
                 aria-label={item.label}
-                className="group flex items-center gap-2"
-                onClick={() => void rate(item.rating)}
+                className="h-8 px-4 text-xs font-semibold group flex items-center gap-1.5 border border-[#960708]/15 shadow-sm bg-[#F5F2EB] text-[#7A0607]"
+                onClick={(event) => {
+                  event.currentTarget.blur()
+                  void rate(item.rating)
+                }}
               >
                 <span>{item.label}</span>
-                <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded-md border border-foreground/20 bg-background/60 px-1.5 font-mono text-[11px] font-semibold text-foreground/70 shadow-xs transition-colors group-hover:border-foreground/40 group-hover:text-foreground">
+                <kbd className="inline-flex h-4 min-w-4 items-center justify-center rounded-md border border-foreground/20 bg-background/60 px-1 font-mono text-[10px] font-semibold text-foreground/70 shadow-xs transition-colors group-hover:border-foreground/40 group-hover:text-foreground">
                   {item.keyHint}
                 </kbd>
               </Button>

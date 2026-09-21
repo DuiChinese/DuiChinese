@@ -61,7 +61,7 @@ export function CharactersPage() {
   }, [unlockedCount, characters.length])
 
   return (
-    <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8">
+    <section className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-5 sm:px-10">
       {/* Clean HSK 1 Progress Tracker (Red & Yellow only) */}
       <div className="w-full max-w-2xl mx-auto flex flex-col gap-2 pt-1">
         <div className="flex flex-wrap items-center justify-between gap-1.5 font-kuaile text-xs sm:text-sm">

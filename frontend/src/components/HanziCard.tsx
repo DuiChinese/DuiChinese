@@ -50,10 +50,10 @@ export function HanziCard({
   const hanziLength = character.hanzi.length
   const hanziSizeClass = isHero
     ? hanziLength <= 1
-      ? "text-7xl sm:text-8xl"
+      ? "text-6xl sm:text-7xl"
       : hanziLength === 2
-        ? "text-5xl sm:text-6xl"
-        : "text-3xl sm:text-4xl"
+        ? "text-4xl sm:text-5xl"
+        : "text-2xl sm:text-3xl"
     : hanziLength <= 1
       ? "text-5xl"
       : hanziLength === 2
@@ -64,7 +64,7 @@ export function HanziCard({
     <div
       className={cn(
         "relative transition-all duration-300",
-        isHero ? "w-full max-w-[34rem]" : "w-full",
+        isHero ? "w-full max-w-[18.5rem] sm:max-w-[21rem] md:max-w-[23rem]" : "w-full",
         locked && "grayscale-[65%] opacity-70 contrast-90 hover:opacity-95"
       )}
     >
@@ -76,14 +76,17 @@ export function HanziCard({
         onClick={onFlip}
         onKeyDown={(event) => {
           if (!onFlip) return
-          if (event.key === "Enter" || event.key === " ") {
+          if (event.key === "Enter" || event.key === " " || event.code === "Space") {
             event.preventDefault()
+            event.stopPropagation()
             onFlip()
           }
         }}
         className={cn(
           "relative gap-0 overflow-hidden rounded-[12px] bg-transparent p-0 py-0 ring-0 cursor-pointer",
-          isHero && "shadow-[0_10px_0_0_rgba(70,0,0,0.28)]"
+          isHero
+            ? "shadow-[0_6px_20px_rgba(25,2,3,0.35),0_18px_36px_-6px_rgba(30,4,5,0.45),0_1px_3px_rgba(0,0,0,0.15)] transition-shadow duration-300 hover:shadow-[0_8px_24px_rgba(25,2,3,0.40),0_24px_48px_-8px_rgba(30,4,5,0.55)]"
+            : "shadow-[0_6px_20px_rgba(0,0,0,0.12),0_2px_6px_rgba(0,0,0,0.08)] transition-all duration-200 hover:shadow-[0_10px_28px_rgba(0,0,0,0.18)] hover:-translate-y-0.5"
         )}
       >
         <CardHeader className="sr-only">
@@ -124,11 +127,11 @@ export function HanziCard({
               </span>
             )}
             {showReading ? (
-              <div className="mt-2 flex flex-col items-center gap-1 sm:mt-3">
+              <div className="mt-2 flex flex-col items-center gap-1 sm:mt-2.5">
                 <span
                   className={cn(
                     "font-pinyin font-medium tracking-wide text-card-foreground",
-                    isHero ? "text-3xl sm:text-4xl" : "text-xl"
+                    isHero ? "text-xl sm:text-2xl" : "text-lg"
                   )}
                 >
                   {character.pinyin}
@@ -136,7 +139,7 @@ export function HanziCard({
                 <span
                   className={cn(
                     "text-muted-foreground font-sans",
-                    isHero ? "text-base sm:text-lg" : "text-sm"
+                    isHero ? "text-xs sm:text-sm max-w-[14rem] sm:max-w-[16rem]" : "text-xs max-w-[11rem]"
                   )}
                 >
                   {character.meaning}
@@ -151,7 +154,7 @@ export function HanziCard({
         <div
           className={cn(
             "absolute z-20 flex flex-col gap-2",
-            isHero ? "-right-14 top-5" : "-right-3 -top-3"
+            isHero ? "-right-12 top-1/2 -translate-y-1/2 sm:-right-14" : "-right-3 -top-3"
           )}
         >
           <Button
@@ -162,13 +165,17 @@ export function HanziCard({
                 ? "Play Mandarin pronunciation"
                 : `Play Mandarin pronunciation for ${character.hanzi}`
             }
-            className={isHero ? undefined : "size-9 rounded-full"}
+            className={
+              isHero
+                ? "size-10 sm:size-11 rounded-full bg-[#FECB6D] text-[#7A0607] hover:bg-[#ffe199] shadow-md border border-[#7A0607]/20 transition-all hover:scale-110 active:scale-95"
+                : "size-9 rounded-full bg-[#FECB6D] text-[#7A0607] hover:bg-[#ffe199] shadow-md border border-[#7A0607]/20 transition-all hover:scale-110 active:scale-95"
+            }
             onClick={(event) => {
               event.stopPropagation()
               void playPronunciation(character.hanzi, "normal")
             }}
           >
-            <Volume2Icon />
+            <Volume2Icon className="size-4 sm:size-5" />
           </Button>
           <Button
             type="button"
@@ -178,13 +185,17 @@ export function HanziCard({
                 ? "Play Mandarin slowly"
                 : `Play Mandarin slowly for ${character.hanzi}`
             }
-            className={isHero ? undefined : "size-9 rounded-full"}
+            className={
+              isHero
+                ? "size-10 sm:size-11 rounded-full bg-[#FECB6D] text-[#7A0607] hover:bg-[#ffe199] shadow-md border border-[#7A0607]/20 transition-all hover:scale-110 active:scale-95"
+                : "size-9 rounded-full bg-[#FECB6D] text-[#7A0607] hover:bg-[#ffe199] shadow-md border border-[#7A0607]/20 transition-all hover:scale-110 active:scale-95"
+            }
             onClick={(event) => {
               event.stopPropagation()
               void playPronunciation(character.hanzi, "slow")
             }}
           >
-            <SnailIcon />
+            <SnailIcon className="size-4 sm:size-5" />
           </Button>
         </div>
       ) : null}

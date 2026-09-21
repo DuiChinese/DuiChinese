@@ -50,10 +50,10 @@ interface CategoryMeta {
   label: string
   subtitle: string
   hint: string
-  badgeVariant: "default" | "secondary" | "outline"
   colorClass: string
   borderClass: string
   barClass: string
+  accentBgClass: string
   icon: typeof BookOpenIcon
 }
 
@@ -63,10 +63,10 @@ const CATEGORIES: CategoryMeta[] = [
     label: "New",
     subtitle: "Never reviewed",
     hint: "Words waiting to enter your study queue",
-    badgeVariant: "default",
-    colorClass: "text-blue-600 dark:text-blue-400",
-    borderClass: "border-l-blue-500",
-    barClass: "bg-blue-500",
+    colorClass: "text-[#9E7B58]",
+    borderClass: "border-l-[#9E7B58]",
+    barClass: "bg-[#9E7B58]",
+    accentBgClass: "bg-[#9E7B58]/12 text-[#805D3D]",
     icon: BookOpenIcon,
   },
   {
@@ -74,10 +74,10 @@ const CATEGORIES: CategoryMeta[] = [
     label: "Learning",
     subtitle: "Intraday steps",
     hint: "Words in initial learning or relearning after a lapse",
-    badgeVariant: "secondary",
-    colorClass: "text-amber-600 dark:text-amber-400",
-    borderClass: "border-l-amber-500",
-    barClass: "bg-amber-500",
+    colorClass: "text-[#D97706]",
+    borderClass: "border-l-[#D97706]",
+    barClass: "bg-[#D97706]",
+    accentBgClass: "bg-[#D97706]/15 text-[#B45309]",
     icon: TimerIcon,
   },
   {
@@ -85,10 +85,10 @@ const CATEGORIES: CategoryMeta[] = [
     label: "Young",
     subtitle: "Interval < 21 days",
     hint: "Graduated cards recently reviewed with interval under 21 days",
-    badgeVariant: "outline",
-    colorClass: "text-emerald-600 dark:text-emerald-400",
-    borderClass: "border-l-emerald-400",
-    barClass: "bg-emerald-400",
+    colorClass: "text-[#B9472E]",
+    borderClass: "border-l-[#B9472E]",
+    barClass: "bg-[#B9472E]",
+    accentBgClass: "bg-[#B9472E]/15 text-[#9A351E]",
     icon: FlameIcon,
   },
   {
@@ -96,10 +96,10 @@ const CATEGORIES: CategoryMeta[] = [
     label: "Mature",
     subtitle: "Interval ≥ 21 days",
     hint: "Consolidated long-term memories with interval of 21 days or more",
-    badgeVariant: "default",
-    colorClass: "text-emerald-800 dark:text-emerald-300",
-    borderClass: "border-l-emerald-700",
-    barClass: "bg-emerald-700",
+    colorClass: "text-[#7A0607]",
+    borderClass: "border-l-[#7A0607]",
+    barClass: "bg-[#7A0607]",
+    accentBgClass: "bg-[#7A0607]/15 text-[#7A0607]",
     icon: CheckCircle2Icon,
   },
 ]
@@ -152,42 +152,45 @@ export function StatsPage() {
   }, [categoryWords, filterQuery])
 
   return (
-    <section className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-8 pb-16">
+    <section className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-8 px-5 pb-16 sm:px-10">
       {/* Header */}
       <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="font-heading text-4xl">Stats</h1>
-        <p className="font-heading text-lg text-foreground/90">
+        <h1 className="font-heading text-4xl text-[#7A0607]">Stats</h1>
+        <p className="font-heading text-lg text-[#7A0607]/85">
           FSRS Spaced Repetition & Anki Card Distribution
         </p>
       </div>
 
       {stats ? (
         <>
-          {/* Anki Card Distribution Stacked Bar */}
-          <Card className="rounded-[1.75rem] ring-1 ring-foreground/10 overflow-hidden shadow-sm">
+          {/* Anki Card Distribution Card with Redesigned Warm Progress Bar */}
+          <Card className="rounded-[1.75rem] ring-1 ring-[#7A0607]/15 overflow-hidden shadow-sm bg-[#F5F2EB]/95">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div>
-                  <CardTitle className="text-xl font-heading text-card-foreground">
+                  <CardTitle className="text-xl font-heading text-[#7A0607]">
                     Anki Card Distribution
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-[#7A0607]/75 text-xs sm:text-sm">
                     Total of {stats.total_characters} characters in deck · Click a category to view Hanzi
                   </CardDescription>
                 </div>
-                <Badge variant="secondary" className="gap-1 font-mono text-xs">
+                <Badge
+                  variant="secondary"
+                  className="gap-1 font-mono text-xs bg-[#FECB6D]/30 text-[#7A0607] border border-[#7A0607]/20"
+                >
                   <BrainIcon className="h-3 w-3" /> FSRS Model
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
-              {/* Stacked Progress Bar with ZCOOL KuaiLe typography */}
+              {/* Sleek, polished progress bar */}
               <div
                 role="progressbar"
                 aria-label="Deck distribution progress"
-                className="flex h-8 w-full overflow-hidden rounded-full bg-black/15 p-0.5 cursor-pointer ring-1 ring-foreground/10"
+                className="flex h-7 w-full overflow-hidden rounded-full bg-[#EADFCF]/60 p-1 ring-1 ring-[#7A0607]/15 shadow-inner gap-1"
               >
-                {CATEGORIES.map((cat, idx) => {
+                {CATEGORIES.map((cat) => {
                   const count =
                     cat.key === "new"
                       ? stats.new_count
@@ -198,33 +201,30 @@ export function StatsPage() {
                       : stats.mature_count
                   const p = pct(count)
                   if (p <= 0) return null
-                  const isFirst = idx === 0
-                  const isLast = idx === CATEGORIES.length - 1
+                  const isSelected = selectedCategory === cat.key
                   return (
                     <button
                       key={cat.key}
                       type="button"
                       onClick={() => setSelectedCategory(cat.key)}
                       style={{ width: `${p}%` }}
-                      className={`h-full ${cat.barClass} flex items-center justify-center font-kuaile text-xs text-white/95 drop-shadow-xs transition-opacity hover:opacity-90 ${
-                        isFirst ? "rounded-l-full" : ""
-                      } ${isLast ? "rounded-r-full" : ""} ${
-                        selectedCategory === cat.key ? "ring-2 ring-foreground" : "opacity-95"
+                      className={`h-full ${cat.barClass} rounded-full flex items-center justify-center font-kuaile text-[11px] sm:text-xs text-[#FFFDF8] transition-all hover:brightness-110 cursor-pointer ${
+                        isSelected
+                          ? "ring-2 ring-[#7A0607] ring-offset-1 font-bold shadow-xs brightness-105"
+                          : "opacity-95 hover:opacity-100"
                       }`}
                       title={`${cat.label}: ${count} (${p}%)`}
                     >
-                      {p >= 12 ? (
-                        <span className="truncate px-1 tracking-wide">{cat.label} {p}%</span>
-                      ) : p >= 7 ? (
-                        <span className="tracking-wide">{p}%</span>
+                      {p >= 10 ? (
+                        <span className="truncate px-1 tracking-wide">{p}%</span>
                       ) : null}
                     </button>
                   )
                 })}
               </div>
 
-              {/* Legend with interactive buttons & ZCOOL KuaiLe */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-1">
+              {/* Legend with interactive category buttons in warm tones */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
                 {CATEGORIES.map((cat) => {
                   const count =
                     cat.key === "new"
@@ -240,16 +240,16 @@ export function StatsPage() {
                       key={cat.key}
                       type="button"
                       onClick={() => setSelectedCategory(cat.key)}
-                      className={`flex items-center gap-2 p-2.5 rounded-xl text-left transition-all ${
+                      className={`flex items-center gap-2.5 p-2.5 rounded-2xl text-left transition-all border ${
                         isSelected
-                          ? "bg-foreground/10 font-semibold ring-1 ring-foreground/20"
-                          : "hover:bg-foreground/5 opacity-85"
+                          ? "bg-[#FDFBF7] font-semibold border-[#7A0607]/40 ring-2 ring-[#7A0607]/20 shadow-sm"
+                          : "bg-[#F5F2EB]/60 border-transparent hover:bg-[#F5F2EB] opacity-90 hover:opacity-100"
                       }`}
                     >
-                      <span className={`h-3 w-3 rounded-full ${cat.barClass} shrink-0`} />
-                      <span className="font-kuaile text-sm text-card-foreground tracking-wide">{cat.label}:</span>
-                      <span className="font-kuaile text-sm text-muted-foreground ml-auto">
-                        {count} ({pct(count)}%)
+                      <span className={`h-3 w-3 rounded-full ${cat.barClass} shrink-0 shadow-xs`} />
+                      <span className="font-kuaile text-sm text-[#7A0607] tracking-wide">{cat.label}:</span>
+                      <span className="font-kuaile text-xs sm:text-sm text-[#7A0607]/75 ml-auto font-medium">
+                        {count} <span className="text-[11px] opacity-75">({pct(count)}%)</span>
                       </span>
                     </button>
                   )
@@ -277,6 +277,7 @@ export function StatsPage() {
                   key={cat.key}
                   role="button"
                   tabIndex={0}
+                  aria-label={cat.label}
                   onClick={() => setSelectedCategory(cat.key)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -284,27 +285,29 @@ export function StatsPage() {
                       setSelectedCategory(cat.key)
                     }
                   }}
-                  className={`rounded-[1.75rem] cursor-pointer transition-all border-l-4 ${
+                  className={`rounded-[1.75rem] cursor-pointer transition-all border-l-4 shadow-sm ${
                     cat.borderClass
                   } ${
                     isSelected
-                      ? "ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-md bg-card"
-                      : "opacity-85 hover:opacity-100 hover:scale-[1.01]"
+                      ? "ring-2 ring-[#7A0607] ring-offset-2 scale-[1.02] shadow-md bg-[#FDFBF7]"
+                      : "bg-[#F5F2EB]/90 opacity-90 hover:opacity-100 hover:scale-[1.01] hover:bg-[#F5F2EB]"
                   }`}
                 >
                   <CardHeader className="pb-1">
                     <div className="flex items-center justify-between">
-                      <CardDescription className={`${cat.colorClass} font-semibold uppercase text-xs tracking-wider`}>
+                      <span className={`${cat.colorClass} font-kuaile font-bold text-xs tracking-wider uppercase`}>
                         {cat.label}
-                      </CardDescription>
-                      <Icon className={`h-4 w-4 ${cat.colorClass} opacity-80`} />
+                      </span>
+                      <div className={`p-1.5 rounded-lg ${cat.accentBgClass}`}>
+                        <Icon className="h-3.5 w-3.5" />
+                      </div>
                     </div>
-                    <CardTitle className="font-heading text-4xl text-card-foreground">
+                    <CardTitle className="font-heading text-4xl text-[#7A0607]">
                       {count}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-xs text-muted-foreground">{cat.subtitle}</p>
+                    <p className="text-xs text-[#7A0607]/70 font-medium">{cat.subtitle}</p>
                   </CardContent>
                 </Card>
               )
@@ -312,35 +315,38 @@ export function StatsPage() {
           </div>
 
           {/* Hanzi Category Word Explorer Table */}
-          <Card className="rounded-[1.75rem] ring-1 ring-foreground/10 overflow-hidden shadow-sm">
-            <CardHeader className="border-b border-foreground/10 pb-4">
+          <Card className="rounded-[1.75rem] ring-1 ring-[#7A0607]/15 overflow-hidden shadow-sm bg-[#F5F2EB]/95">
+            <CardHeader className="border-b border-[#7A0607]/10 pb-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-xl bg-card border ${activeMeta.borderClass}`}>
+                  <div className={`p-2 rounded-xl bg-card border ${activeMeta.borderClass} ${activeMeta.accentBgClass}`}>
                     <activeMeta.icon className={`h-5 w-5 ${activeMeta.colorClass}`} />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <CardTitle className="text-xl font-heading text-card-foreground">
+                      <CardTitle className="text-xl font-heading text-[#7A0607]">
                         Words in {activeMeta.label}
                       </CardTitle>
-                      <Badge variant="outline" className="font-mono">
+                      <Badge
+                        variant="outline"
+                        className="font-mono text-xs border-[#7A0607]/20 bg-[#F5F2EB] text-[#7A0607]"
+                      >
                         {categoryWords.length} hanzi
                       </Badge>
                     </div>
-                    <CardDescription>{activeMeta.hint}</CardDescription>
+                    <CardDescription className="text-[#7A0607]/75">{activeMeta.hint}</CardDescription>
                   </div>
                 </div>
 
                 {/* Filter and Category Tabs Switcher */}
                 <div className="flex items-center gap-3">
                   <div className="relative w-44 sm:w-52">
-                    <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                    <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#7A0607]/60 pointer-events-none" />
                     <Input
                       placeholder="Search Hanzi..."
                       value={filterQuery}
                       onChange={(e) => setFilterQuery(e.target.value)}
-                      className="pl-8 h-9 text-xs rounded-full bg-secondary/50 text-secondary-foreground"
+                      className="pl-8 h-9 text-xs rounded-full bg-[#EADFCF]/40 border-[#7A0607]/15 text-[#7A0607] focus-visible:ring-[#7A0607]/30 placeholder:text-[#7A0607]/50"
                     />
                   </div>
 
@@ -349,12 +355,12 @@ export function StatsPage() {
                     onValueChange={(val) => setSelectedCategory(val as CategoryKey)}
                     className="hidden sm:block"
                   >
-                    <TabsList className="h-9 rounded-full bg-secondary/40 p-1">
+                    <TabsList className="h-9 rounded-full bg-[#EADFCF]/60 p-1 border border-[#7A0607]/10">
                       {CATEGORIES.map((cat) => (
                         <TabsTrigger
                           key={cat.key}
                           value={cat.key}
-                          className="rounded-full px-3 text-xs data-[state=active]:bg-card data-[state=active]:text-card-foreground"
+                          className="rounded-full px-3 text-xs font-kuaile text-[#7A0607] data-[state=active]:bg-[#FECB6D] data-[state=active]:text-[#7A0607] data-[state=active]:font-bold data-[state=active]:shadow-xs"
                         >
                           {cat.label}
                         </TabsTrigger>
@@ -369,41 +375,41 @@ export function StatsPage() {
               {filteredWords.length > 0 ? (
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-b border-foreground/10 bg-muted/20 hover:bg-transparent">
-                      <TableHead className="w-16 text-center font-semibold">#</TableHead>
-                      <TableHead className="w-28 font-semibold">Hanzi</TableHead>
-                      <TableHead className="w-36 font-semibold">Pinyin</TableHead>
-                      <TableHead className="font-semibold">Meaning</TableHead>
-                      <TableHead className="w-28 text-right font-semibold">Interval</TableHead>
-                      <TableHead className="w-20 text-center font-semibold">Audio</TableHead>
+                    <TableRow className="border-b border-[#7A0607]/10 bg-[#EADFCF]/25 hover:bg-transparent">
+                      <TableHead className="w-16 text-center font-semibold text-[#7A0607]">#</TableHead>
+                      <TableHead className="w-28 font-semibold text-[#7A0607]">Hanzi</TableHead>
+                      <TableHead className="w-36 font-semibold text-[#7A0607]">Pinyin</TableHead>
+                      <TableHead className="font-semibold text-[#7A0607]">Meaning</TableHead>
+                      <TableHead className="w-28 text-right font-semibold text-[#7A0607]">Interval</TableHead>
+                      <TableHead className="w-20 text-center font-semibold text-[#7A0607]">Audio</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredWords.map((word, index) => (
                       <TableRow
                         key={word.id || index}
-                        className="border-b border-foreground/5 transition-colors hover:bg-muted/30"
+                        className="border-b border-[#7A0607]/5 transition-colors hover:bg-[#EADFCF]/20"
                       >
                         {/* Index */}
-                        <TableCell className="text-center text-xs text-muted-foreground font-mono">
+                        <TableCell className="text-center text-xs text-[#7A0607]/60 font-mono">
                           {index + 1}
                         </TableCell>
 
                         {/* Hanzi */}
-                        <TableCell className="font-hanzi text-2xl font-bold text-card-foreground">
+                        <TableCell className="font-hanzi text-2xl font-bold text-[#7A0607]">
                           {word.hanzi}
                         </TableCell>
 
                         {/* Pinyin */}
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <span className="font-pinyin font-medium text-foreground/90 text-base tracking-wide">
+                            <span className="font-pinyin font-medium text-[#7A0607] text-base tracking-wide">
                               {word.pinyin}
                             </span>
                             {word.tone && (
                               <Badge
                                 variant="secondary"
-                                className="h-4 px-1.5 text-[10px] font-semibold uppercase"
+                                className="h-4 px-1.5 text-[10px] font-semibold uppercase bg-[#FECB6D]/30 text-[#7A0607] border border-[#7A0607]/15"
                               >
                                 T{word.tone}
                               </Badge>
@@ -412,18 +418,18 @@ export function StatsPage() {
                         </TableCell>
 
                         {/* Meaning */}
-                        <TableCell className="text-sm text-muted-foreground font-sans">
+                        <TableCell className="text-sm text-[#7A0607]/80 font-sans">
                           {word.meaning}
                         </TableCell>
 
                         {/* Interval / FSRS days */}
                         <TableCell className="text-right font-mono text-xs">
                           {(word.interval_days ?? 0) > 0 ? (
-                            <span className="font-medium text-card-foreground">
+                            <span className="font-semibold text-[#7A0607]">
                               {word.interval_days}d
                             </span>
                           ) : (
-                            <span className="text-muted-foreground italic">New</span>
+                            <span className="text-[#7A0607]/60 italic">New</span>
                           )}
                         </TableCell>
 
@@ -435,9 +441,9 @@ export function StatsPage() {
                             size="icon"
                             onClick={() => void playPronunciation(word.hanzi)}
                             title={`Listen to ${word.hanzi}`}
-                            className="h-8 w-8 rounded-full hover:bg-primary/20 hover:text-primary"
+                            className="size-7 rounded-full bg-[#FECB6D] text-[#7A0607] hover:bg-[#ffe199] shadow-xs transition-transform hover:scale-110 active:scale-95 border border-[#7A0607]/15 mx-auto flex items-center justify-center p-0"
                           >
-                            <Volume2Icon className="h-4 w-4" />
+                            <Volume2Icon className="size-3.5" />
                             <span className="sr-only">Pronounce {word.hanzi}</span>
                           </Button>
                         </TableCell>
@@ -449,8 +455,8 @@ export function StatsPage() {
                 <div className="py-12 px-4">
                   <Empty>
                     <EmptyHeader>
-                      <EmptyTitle className="text-lg">No words found</EmptyTitle>
-                      <EmptyDescription>
+                      <EmptyTitle className="text-lg text-[#7A0607]">No words found</EmptyTitle>
+                      <EmptyDescription className="text-[#7A0607]/70">
                         {filterQuery
                           ? `No Hanzi matched "${filterQuery}" in the ${activeMeta.label} category.`
                           : `There are currently no Hanzi characters in the ${activeMeta.label} category.`}
@@ -462,69 +468,77 @@ export function StatsPage() {
             </CardContent>
           </Card>
 
-          {/* FSRS Performance & Study Metrics Grid */}
+          {/* FSRS Performance & Study Metrics Grid with Warm Chinese Palette */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Due Today */}
-            <Card className="rounded-[1.75rem] ring-1 ring-foreground/10">
+            <Card className="rounded-[1.75rem] ring-1 ring-[#7A0607]/10 bg-[#F5F2EB]/90 shadow-sm">
               <CardHeader className="pb-1">
                 <div className="flex items-center justify-between">
-                  <CardDescription>Due today</CardDescription>
-                  <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                  <CardDescription className="text-[#7A0607]/75 font-medium">Due today</CardDescription>
+                  <div className="p-1.5 rounded-lg bg-[#D97706]/15 text-[#D97706]">
+                    <CalendarIcon className="h-4 w-4" />
+                  </div>
                 </div>
-                <CardTitle className="font-heading text-4xl text-card-foreground">
+                <CardTitle className="font-heading text-4xl text-[#7A0607]">
                   {stats.due_today_count}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-muted-foreground">Cards waiting on the desk</p>
+                <p className="text-xs text-[#7A0607]/70">Cards waiting on the desk</p>
               </CardContent>
             </Card>
 
             {/* Reviews */}
-            <Card className="rounded-[1.75rem] ring-1 ring-foreground/10">
+            <Card className="rounded-[1.75rem] ring-1 ring-[#7A0607]/10 bg-[#F5F2EB]/90 shadow-sm">
               <CardHeader className="pb-1">
                 <div className="flex items-center justify-between">
-                  <CardDescription>Reviews</CardDescription>
-                  <TargetIcon className="h-4 w-4 text-muted-foreground" />
+                  <CardDescription className="text-[#7A0607]/75 font-medium">Reviews</CardDescription>
+                  <div className="p-1.5 rounded-lg bg-[#B9472E]/15 text-[#B9472E]">
+                    <TargetIcon className="h-4 w-4" />
+                  </div>
                 </div>
-                <CardTitle className="font-heading text-4xl text-card-foreground">
+                <CardTitle className="font-heading text-4xl text-[#7A0607]">
                   {stats.total_reviews}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-muted-foreground">Times you turned a card</p>
+                <p className="text-xs text-[#7A0607]/70">Times you turned a card</p>
               </CardContent>
             </Card>
 
             {/* Retention */}
-            <Card className="rounded-[1.75rem] ring-1 ring-foreground/10">
+            <Card className="rounded-[1.75rem] ring-1 ring-[#7A0607]/10 bg-[#F5F2EB]/90 shadow-sm">
               <CardHeader className="pb-1">
                 <div className="flex items-center justify-between">
-                  <CardDescription>Retention</CardDescription>
-                  <SparklesIcon className="h-4 w-4 text-muted-foreground" />
+                  <CardDescription className="text-[#7A0607]/75 font-medium">Retention</CardDescription>
+                  <div className="p-1.5 rounded-lg bg-[#FECB6D]/40 text-[#7A0607]">
+                    <SparklesIcon className="h-4 w-4" />
+                  </div>
                 </div>
-                <CardTitle className="font-heading text-4xl text-card-foreground">
+                <CardTitle className="font-heading text-4xl text-[#7A0607]">
                   {stats.retention_rate}%
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-muted-foreground">Share of ratings 3 and 4</p>
+                <p className="text-xs text-[#7A0607]/70">Share of ratings 3 and 4</p>
               </CardContent>
             </Card>
 
             {/* Mastered / FSRS Stability */}
-            <Card className="rounded-[1.75rem] ring-1 ring-foreground/10">
+            <Card className="rounded-[1.75rem] ring-1 ring-[#7A0607]/10 bg-[#F5F2EB]/90 shadow-sm">
               <CardHeader className="pb-1">
                 <div className="flex items-center justify-between">
-                  <CardDescription>Mastered</CardDescription>
-                  <BrainIcon className="h-4 w-4 text-muted-foreground" />
+                  <CardDescription className="text-[#7A0607]/75 font-medium">Mastered</CardDescription>
+                  <div className="p-1.5 rounded-lg bg-[#7A0607]/15 text-[#7A0607]">
+                    <BrainIcon className="h-4 w-4" />
+                  </div>
                 </div>
-                <CardTitle className="font-heading text-4xl text-card-foreground">
+                <CardTitle className="font-heading text-4xl text-[#7A0607]">
                   {stats.mature_count ?? stats.mastered_count}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-[#7A0607]/70">
                   {stats.average_stability
                     ? `FSRS Stability ~${stats.average_stability}d`
                     : "Long-term consolidated"}
