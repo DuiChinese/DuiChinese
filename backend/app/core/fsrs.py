@@ -240,7 +240,13 @@ def calculate_fsrs_next_review(
     # Subsequent review
     elapsed_days = 0.0
     if current.last_reviewed is not None:
-        elapsed_days = max(0.0, (now - current.last_reviewed).total_seconds() / 86400.0)
+        last_rev = current.last_reviewed
+        now_cmp = now
+        if last_rev.tzinfo is None and now_cmp.tzinfo is not None:
+            last_rev = last_rev.replace(tzinfo=timezone.utc)
+        elif last_rev.tzinfo is not None and now_cmp.tzinfo is None:
+            now_cmp = now_cmp.replace(tzinfo=timezone.utc)
+        elapsed_days = max(0.0, (now_cmp - last_rev).total_seconds() / 86400.0)
     else:
         elapsed_days = float(current.interval_days)
 

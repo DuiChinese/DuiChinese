@@ -144,7 +144,6 @@
   background-image: url('/assets/marble-bg.jpg');
   background-size: cover;
   background-position: center;
-  background-attachment: fixed;
   background-repeat: no-repeat;
 }
 
@@ -162,6 +161,68 @@
   left: 0;
   line-height: 1;
   will-change: transform;
+}
+
+/* Ambient organic bamboo shadows & dappled sunlight */
+@keyframes ambient-sunlight-breathe {
+  0%, 100% {
+    opacity: 0.84;
+  }
+  50% {
+    opacity: 1.06;
+  }
+}
+
+@keyframes ambient-bamboo-sway-slow {
+  0% {
+    transform: rotate(0deg) translate3d(0, 0, 0);
+  }
+  25% {
+    transform: rotate(2.2deg) translate3d(-16px, 12px, 0);
+  }
+  50% {
+    transform: rotate(-1.2deg) translate3d(10px, -7px, 0);
+  }
+  75% {
+    transform: rotate(3deg) translate3d(-22px, 17px, 0);
+  }
+  100% {
+    transform: rotate(-0.8deg) translate3d(7px, -5px, 0);
+  }
+}
+
+@keyframes ambient-bamboo-flutter {
+  0% {
+    transform: rotate(0deg) scale(1, 1) translate3d(0, 0, 0);
+  }
+  20% {
+    transform: rotate(2deg) scale(1.015, 0.985) translate3d(-12px, 9px, 0);
+  }
+  45% {
+    transform: rotate(-1.8deg) scale(0.985, 1.015) translate3d(11px, -7px, 0);
+  }
+  70% {
+    transform: rotate(1.5deg) scale(1.01, 0.99) translate3d(-8px, 6px, 0);
+  }
+  100% {
+    transform: rotate(-2.2deg) scale(0.99, 1.01) translate3d(14px, -11px, 0);
+  }
+}
+
+.ambient-sunlight-breathe {
+  animation: ambient-sunlight-breathe 13s ease-in-out infinite alternate;
+}
+
+.ambient-bamboo-sway-slow {
+  transform-origin: 90% 5%;
+  will-change: transform;
+  animation: ambient-bamboo-sway-slow 14s ease-in-out infinite alternate;
+}
+
+.ambient-bamboo-flutter {
+  transform-origin: 88% 8%;
+  will-change: transform;
+  animation: ambient-bamboo-flutter 9.5s ease-in-out infinite alternate;
 }
 
 @layer base {
@@ -186,11 +247,6 @@
 
   body {
     background-color: #F7F4EE;
-    background-image: url('/assets/marble-bg.jpg');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-    background-repeat: no-repeat;
     color: var(--foreground);
     margin: 0;
   }

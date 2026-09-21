@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom"
 
+import { AmbientShadows } from "@/components/AmbientShadows"
 import { BrandLogo } from "@/components/BrandLogo"
 import { cn } from "cn"
 
@@ -16,12 +17,22 @@ export function AppShell() {
   return (
     <div
       className={cn(
-        "flex flex-col text-foreground",
-        isFlashcards
-          ? "h-svh max-h-svh overflow-hidden bg-flashcard-scene select-none"
-          : "min-h-svh bg-marble-surface"
+        "relative flex min-h-svh flex-col text-foreground",
+        isFlashcards && "h-svh max-h-svh overflow-hidden select-none"
       )}
     >
+      {/* 1. Rock-solid fixed background: completely frozen in place during scroll */}
+      <div
+        aria-hidden="true"
+        className={cn(
+          "pointer-events-none fixed inset-0 -z-30",
+          isFlashcards ? "bg-flashcard-scene" : "bg-marble-surface"
+        )}
+      />
+
+      {/* 2. Ambient organic bamboo shadows: fixed at z-15 so they drape gently over components on all pages */}
+      <AmbientShadows className="z-15" />
+
       <header
         data-app-header
         className={cn(
@@ -51,7 +62,7 @@ export function AppShell() {
       </header>
       <main
         className={cn(
-          "flex flex-1 flex-col",
+          "relative z-10 flex flex-1 flex-col",
           isFlashcards ? "h-svh max-h-svh overflow-hidden px-0 pb-0" : "px-5 pb-12 sm:px-10"
         )}
       >
