@@ -13,6 +13,9 @@ def get_engine():
     If unavailable and SQLITE_FALLBACK is enabled, falls back to SQLite.
     """
     database_url = settings.DATABASE_URL
+    # Ensure psycopg 3 driver is specified for standard postgresql URLs
+    if database_url.startswith("postgresql://"):
+        database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
     try:
         # Check if URL is PostgreSQL
         if "postgresql" in database_url:

@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 
+import { AuthProvider } from "@/hooks/use-auth"
 import { AppShell } from "@/components/AppShell"
 import { CharactersPage } from "@/pages/CharactersPage"
 import { FlashcardsPage } from "@/pages/FlashcardsPage"
@@ -8,15 +9,17 @@ import { StatsPage } from "@/pages/StatsPage"
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<AppShell />}>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/flashcards" element={<FlashcardsPage />} />
-          <Route path="/characters" element={<CharactersPage />} />
-          <Route path="/stats" element={<StatsPage />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<AppShell />}>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/flashcards" element={<FlashcardsPage />} />
+            <Route path="/characters" element={<CharactersPage />} />
+            <Route path="/stats" element={<StatsPage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   )
 }

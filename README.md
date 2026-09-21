@@ -9,7 +9,8 @@
     <img src="https://img.shields.io/badge/FastAPI-0.110+-009688?logo=fastapi&logoColor=white" alt="FastAPI" />
     <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" alt="React" />
     <img src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white" alt="Vite" />
-    <img src="https://img.shields.io/badge/tests-29%20passing-brightgreen" alt="Tests 29 passing" />
+    <img src="https://img.shields.io/badge/Supabase-Auth%20%2B%20Postgres-3ECF8E?logo=supabase&logoColor=white" alt="Supabase" />
+    <img src="https://img.shields.io/badge/tests-54%20passing-brightgreen" alt="Tests 54 passing" />
   </p>
 </div>
 
@@ -35,14 +36,21 @@
      - **Hard (2)**: Interval scaled by 1.2x, ease factor decreased by 0.15.
      - **Medium (3)**: Standard SM-2 interval progression (1d → 6d → interval × ease).
      - **Easy (4)**: Multiplied with 1.3x easy bonus, ease factor increased by 0.15.
-   - Per-card SRS progress tracking (`CardSRS`) with due date calculations and review history.
+   - Per-card SRS progress tracking (`CardSRS` / `UserCardSRS`) with due date calculations and review history.
 
-3. **100% English Interface**:
+3. **Multi-User Cloud Sync with Supabase**:
+   - Centralized cloud PostgreSQL database hosting 243 HSK1 characters.
+   - User authentication via **Google 1-Click OAuth** and traditional **Email + Password** registration / login.
+   - Secure password reset / recovery flow.
+   - Multi-tenant data isolation: individual user progress stored in `user_card_srs` and `user_reviews`.
+   - FastAPI JWT verification using Supabase's public JWKS (`ES256`).
+
+4. **100% English Interface**:
    - Navigation: **Flashcards**, **Characters**, **Stats**.
    - Flashcard modes: **Hanzi** (character → reading), **Meaning** (reading → character), **Listen** (audio → write hanzi), **Speak** (see hanzi → say it).
    - Flashcard controls: **Previous**, **Turn around**, **Next**, and **Again**, **Hard**, **Medium**, **Easy** after a reveal.
 
-4. **Keyboard-First Experience**:
+5. **Keyboard-First Experience**:
    - `Space`: Turn around / flip card.
    - `←` / `→`: Navigate Previous / Next card.
    - `1`, `2`, `3`, `4`: Submit Anki SRS rating (`Again`, `Hard`, `Medium`, `Easy`).
@@ -129,11 +137,11 @@ npm run dev
 ## 🧪 Verification Commands
 
 ```bash
-# Backend test verification (21 tests)
+# Backend test verification (34 tests)
 cd backend && source venv/bin/activate && pytest -v
 
-# Frontend test & build verification
-cd frontend && npm run test:run && npm run build
+# Frontend test & build verification (20 tests)
+cd frontend && npm test -- --run && npm run build
 ```
 
 ---

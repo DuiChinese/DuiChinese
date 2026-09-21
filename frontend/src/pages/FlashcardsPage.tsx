@@ -4,6 +4,8 @@ import { CheckCircle2Icon, CircleAlertIcon, MicIcon, UnlockIcon, RotateCcwIcon }
 
 import { HanziCard } from "@/components/HanziCard"
 import { StudyModeSwitch } from "@/components/StudyModeSwitch"
+import { AuthWall } from "@/components/AuthWall"
+import { useAuth } from "@/hooks/use-auth"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
@@ -35,6 +37,7 @@ type Feedback = {
 }
 
 export function FlashcardsPage() {
+  const { user, loading: authLoading } = useAuth()
   const { characters: initialCharacters, loading } = useCharacters("due")
   const [deck, setDeck] = useState<Character[]>([])
   const [params, setParams] = useSearchParams()
@@ -354,6 +357,16 @@ export function FlashcardsPage() {
             <UnlockIcon className="size-4" />
             {unlocking ? "Unlocking…" : "Unlock tomorrow's cards (+7)"}
           </Button>
+        </div>
+      </section>
+    )
+  }
+
+  if (!authLoading && !user) {
+    return (
+      <section className="relative h-full w-full select-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md px-4 z-10 pointer-events-auto">
+          <AuthWall />
         </div>
       </section>
     )

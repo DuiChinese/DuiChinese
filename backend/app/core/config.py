@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     SQLITE_FALLBACK: bool = True
     SQLITE_FALLBACK_URL: str = "sqlite:///./duichinese_local.db"
     
+    # Supabase Auth
+    SUPABASE_URL: str = "https://biijwmvcpshpxgbtepws.supabase.co"
+    
     # CORS Origins
     ALLOWED_ORIGINS: List[str] = [
         "http://localhost:5173",

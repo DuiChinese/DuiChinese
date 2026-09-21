@@ -1,4 +1,5 @@
 import { HSK1_CHARACTERS } from "@/data/hsk1"
+import { getAccessToken } from "@/lib/supabase"
 import type {
   Character,
   FlashcardReviewResponse,
@@ -7,6 +8,19 @@ import type {
 } from "@/lib/types"
 
 const API_BASE = import.meta.env.VITE_API_URL || ""
+
+async function authHeaders(customHeaders?: Record<string, string>): Promise<HeadersInit> {
+  const headers: Record<string, string> = { ...customHeaders }
+  try {
+    const token = await getAccessToken()
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`
+    }
+  } catch {
+    // Ignore in tests or offline mode
+  }
+  return headers
+}
 
 const UNLOCKED_STORAGE_KEY = "duichinese_unlocked_ids_v1"
 const LOCAL_SRS_KEY = "duichinese_local_srs_v1"
@@ -68,7 +82,9 @@ function saveLocalSRSMap(map: Record<number, LocalSRSState>) {
 
 export async function loadCharacters(): Promise<Character[]> {
   try {
-    const response = await fetch(`${API_BASE}/api/characters`)
+    const response = await fetch(`${API_BASE}/api/characters`, {
+      headers: await authHeaders(),
+    })
     if (!response.ok) throw new Error("Failed to fetch characters")
     return await response.json()
   } catch {
@@ -82,7 +98,9 @@ export async function loadCharacters(): Promise<Character[]> {
 
 export async function loadDueCharacters(): Promise<Character[]> {
   try {
-    const response = await fetch(`${API_BASE}/api/practice/due`)
+    const response = await fetch(`${API_BASE}/api/practice/due`, {
+      headers: await authHeaders(),
+    })
     if (!response.ok) throw new Error("Failed to fetch due characters")
     return await response.json()
   } catch {
@@ -106,7 +124,9 @@ export async function loadDueCharacters(): Promise<Character[]> {
 
 export async function loadPracticeAhead(): Promise<Character[]> {
   try {
-    const response = await fetch(`${API_BASE}/api/practice/ahead`)
+    const response = await fetch(`${API_BASE}/api/practice/ahead`, {
+      headers: await authHeaders(),
+    })
     if (!response.ok) throw new Error("Failed to fetch practice ahead")
     return await response.json()
   } catch {
@@ -122,6 +142,7 @@ export async function unlockNextBatch(count: number = 7): Promise<Character[]> {
   try {
     const response = await fetch(`${API_BASE}/api/characters/unlock-next?count=${count}`, {
       method: "POST",
+      headers: await authHeaders(),
     })
     if (!response.ok) throw new Error("Failed to unlock next batch")
     return await response.json()
@@ -137,7 +158,9 @@ export async function unlockNextBatch(count: number = 7): Promise<Character[]> {
 
 export async function loadStats(fallbackCharacters?: Character[]): Promise<Stats> {
   try {
-    const response = await fetch(`${API_BASE}/api/practice/stats`)
+    const response = await fetch(`${API_BASE}/api/practice/stats`, {
+      headers: await authHeaders(),
+    })
     if (!response.ok) throw new Error("Failed to fetch stats")
     return await response.json()
   } catch {
@@ -189,9 +212,9 @@ export async function loadStats(fallbackCharacters?: Character[]): Promise<Stats
       mastered_count: catMature.length,
       due_today_count: Math.min(3, unlockedChars.length),
       average_ease_factor: 2.5,
-      average_stability: 14.5,
-      average_difficulty: 4.8,
-      retention_rate: 92.5,
+      average_stability: 0.0,
+      average_difficulty: 0.0,
+      retention_rate: 0.0,
       categories: {
         new: catNew,
         learning: catLearning,
@@ -209,7 +232,7 @@ export async function submitReview(
   try {
     const response = await fetch(`${API_BASE}/api/practice/review`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ character_id: characterId, rating }),
     })
     if (!response.ok) throw new Error("Failed to submit review")

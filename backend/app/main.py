@@ -19,25 +19,26 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing DuiChinese database tables...")
     Base.metadata.create_all(bind=engine)
 
-    # Ensure FSRS columns & is_unlocked exist if table pre-dated them
-    try:
-        from sqlalchemy import text
-        with engine.begin() as conn:
-            res_srs = conn.execute(text("PRAGMA table_info(card_srs)")).fetchall()
-            existing_srs = {row[1] for row in res_srs}
-            if existing_srs and "stability" not in existing_srs:
-                conn.execute(text("ALTER TABLE card_srs ADD COLUMN stability FLOAT DEFAULT 0.0"))
-            if existing_srs and "difficulty" not in existing_srs:
-                conn.execute(text("ALTER TABLE card_srs ADD COLUMN difficulty FLOAT DEFAULT 0.0"))
-            if existing_srs and "is_unlocked" not in existing_srs:
-                conn.execute(text("ALTER TABLE card_srs ADD COLUMN is_unlocked INTEGER DEFAULT 0"))
+    # Ensure FSRS columns & is_unlocked exist if table pre-dated them (SQLite legacy check)
+    if engine.dialect.name == "sqlite":
+        try:
+            from sqlalchemy import text
+            with engine.begin() as conn:
+                res_srs = conn.execute(text("PRAGMA table_info(card_srs)")).fetchall()
+                existing_srs = {row[1] for row in res_srs}
+                if existing_srs and "stability" not in existing_srs:
+                    conn.execute(text("ALTER TABLE card_srs ADD COLUMN stability FLOAT DEFAULT 0.0"))
+                if existing_srs and "difficulty" not in existing_srs:
+                    conn.execute(text("ALTER TABLE card_srs ADD COLUMN difficulty FLOAT DEFAULT 0.0"))
+                if existing_srs and "is_unlocked" not in existing_srs:
+                    conn.execute(text("ALTER TABLE card_srs ADD COLUMN is_unlocked INTEGER DEFAULT 0"))
 
-            res_char = conn.execute(text("PRAGMA table_info(characters)")).fetchall()
-            existing_char = {row[1] for row in res_char}
-            if existing_char and "order_index" not in existing_char:
-                conn.execute(text("ALTER TABLE characters ADD COLUMN order_index INTEGER DEFAULT 0"))
-    except Exception as e:
-        logger.warning(f"Database schema check note: {e}")
+                res_char = conn.execute(text("PRAGMA table_info(characters)")).fetchall()
+                existing_char = {row[1] for row in res_char}
+                if existing_char and "order_index" not in existing_char:
+                    conn.execute(text("ALTER TABLE characters ADD COLUMN order_index INTEGER DEFAULT 0"))
+        except Exception as e:
+            logger.warning(f"Database schema check note: {e}")
 
     # Auto-seed all 150 HSK1 characters if database is brand new or incomplete
     from app.data.seed_hsk1 import INITIAL_HSK1_CHARACTERS

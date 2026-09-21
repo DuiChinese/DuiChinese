@@ -38,6 +38,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { AuthWall } from "@/components/AuthWall"
+import { useAuth } from "@/hooks/use-auth"
 import { useCharacters } from "@/hooks/use-characters"
 import { loadStats } from "@/lib/api"
 import { playPronunciation } from "@/lib/speech"
@@ -105,6 +107,7 @@ const CATEGORIES: CategoryMeta[] = [
 ]
 
 export function StatsPage() {
+  const { user, loading: authLoading } = useAuth()
   const { characters, loading: loadingCharacters } = useCharacters("all")
   const [stats, setStats] = useState<Stats | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<CategoryKey>("new")
@@ -150,6 +153,16 @@ export function StatsPage() {
         w.meaning.toLowerCase().includes(q)
     )
   }, [categoryWords, filterQuery])
+
+  if (!authLoading && !user) {
+    return (
+      <section className="relative flex flex-1 min-h-[calc(100svh-6rem)] w-full items-center justify-center px-4 py-8">
+        <div className="w-full max-w-md">
+          <AuthWall />
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-8 px-5 pb-16 sm:px-10">
