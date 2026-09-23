@@ -22,6 +22,9 @@ interface AuthContextType {
   session: Session | null
   loading: boolean
   isAuthenticated: boolean
+  isGuest: boolean
+  continueAsGuest: () => void
+  exitGuestMode: () => void
   signInWithGoogle: () => Promise<void>
   signInWithPassword: (email: string, password: string) => Promise<void>
   signUpWithPassword: (
@@ -36,18 +39,59 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+const GUEST_STORAGE_KEY = "duichinese_guest_mode"
+
 interface AuthProviderProps {
   children: ReactNode
   initialUser?: User | null
+  initialIsGuest?: boolean
 }
 
-export function AuthProvider({ children, initialUser }: AuthProviderProps) {
+export function AuthProvider({ children, initialUser, initialIsGuest }: AuthProviderProps) {
   const isTesting = initialUser !== undefined
   const [user, setUser] = useState<User | null>(isTesting ? initialUser : null)
   const [session, setSession] = useState<Session | null>(
     isTesting && initialUser ? ({ access_token: "test_token", user: initialUser } as unknown as Session) : null
   )
   const [loading, setLoading] = useState(!isTesting)
+  const [isGuest, setIsGuest] = useState<boolean>(() => {
+    if (initialIsGuest !== undefined) return initialIsGuest
+    try {
+      return localStorage.getItem(GUEST_STORAGE_KEY) === "true"
+    } catch {
+      return false
+    }
+  })
+
+  // Clear guest mode whenever an authenticated user signs in
+  useEffect(() => {
+    if (user) {
+      setIsGuest(false)
+      try {
+        localStorage.removeItem(GUEST_STORAGE_KEY)
+      } catch {
+        // ignore
+      }
+    }
+  }, [user])
+
+  const continueAsGuest = () => {
+    setIsGuest(true)
+    try {
+      localStorage.setItem(GUEST_STORAGE_KEY, "true")
+    } catch {
+      // ignore
+    }
+  }
+
+  const exitGuestMode = () => {
+    setIsGuest(false)
+    try {
+      localStorage.removeItem(GUEST_STORAGE_KEY)
+    } catch {
+      // ignore
+    }
+  }
 
   useEffect(() => {
     if (isTesting) {
@@ -97,6 +141,7 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
   }
 
   const handleSignOut = async () => {
+    exitGuestMode()
     await signOut()
   }
 
@@ -107,6 +152,9 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
         session,
         loading,
         isAuthenticated: Boolean(user),
+        isGuest,
+        continueAsGuest,
+        exitGuestMode,
         signInWithGoogle: handleSignInWithGoogle,
         signInWithPassword: handleSignInWithPassword,
         signUpWithPassword: handleSignUpWithPassword,

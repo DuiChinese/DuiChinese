@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event"
 import { AuthWall } from "@/components/AuthWall"
 import { AuthModal } from "@/components/AuthModal"
 import { AuthProvider } from "@/hooks/use-auth"
+import { renderAt } from "@/test/render"
 
 describe("Authentication UI", () => {
   it("renders AuthWall directly with Google and email form in English", () => {
@@ -47,5 +48,30 @@ describe("Authentication UI", () => {
     // Close modal
     await user.click(screen.getByRole("button", { name: /close/i }))
     expect(onClose).toHaveBeenCalled()
+  })
+
+  it("renders Continue as Guest option and allows guest exploration", async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+
+    render(
+      <AuthProvider initialUser={null} initialIsGuest={false}>
+        <AuthModal isOpen={true} onClose={onClose} />
+      </AuthProvider>
+    )
+
+    const guestButton = screen.getByRole("button", { name: /continue as guest/i })
+    expect(guestButton).toBeInTheDocument()
+
+    await user.click(guestButton)
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it("allows guests to review flashcards without encountering the AuthWall", async () => {
+    renderAt("/flashcards", null, true)
+
+    expect(await screen.findByRole("button", { name: /turn around/i })).toBeInTheDocument()
+    expect(screen.queryByRole("heading", { name: "Sign In" })).not.toBeInTheDocument()
+    expect(screen.getByText("Guest Mode")).toBeInTheDocument()
   })
 })

@@ -37,7 +37,7 @@ type Feedback = {
 }
 
 export function FlashcardsPage() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, isGuest } = useAuth()
   const { characters: initialCharacters, loading } = useCharacters("due")
   const [deck, setDeck] = useState<Character[]>([])
   const [params, setParams] = useSearchParams()
@@ -244,14 +244,14 @@ export function FlashcardsPage() {
           character.hanzi,
           event.shiftKey ? "slow" : "normal"
         )
-      } else if (flipped && ["1", "2", "3", "4"].includes(event.key)) {
+      } else if (["1", "2", "3", "4"].includes(event.key)) {
         void rate(Number(event.key) as ReviewRating)
       }
     }
 
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [character, flipped, goTo, rate])
+  }, [character, goTo, rate])
 
   function checkHeardCharacter(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -362,7 +362,7 @@ export function FlashcardsPage() {
     )
   }
 
-  if (!authLoading && !user) {
+  if (!authLoading && !user && !isGuest) {
     return (
       <section className="relative h-full w-full select-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md px-4 z-10 pointer-events-auto">
@@ -497,26 +497,13 @@ export function FlashcardsPage() {
           </Alert>
         ) : null}
 
-        {/* Row 1: < Turn around > */}
-        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+        {/* Row 1: Turn around */}
+        <div className="flex items-center justify-center">
           <Button
             type="button"
             variant="secondary"
             size="pill"
-            aria-label="Previous"
-            className="w-10 h-9 px-0 flex items-center justify-center font-bold text-base border border-[#960708]/15 shadow-sm bg-[#F5F2EB] text-[#7A0607]"
-            onClick={(event) => {
-              event.currentTarget.blur()
-              goTo(-1)
-            }}
-          >
-            &lt;
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            size="pill"
-            className="h-9 px-6 text-sm font-semibold border border-[#960708]/15 shadow-sm bg-[#F5F2EB] text-[#7A0607]"
+            className="h-9 px-6 text-sm font-semibold border border-[#960708]/15 shadow-sm bg-[#F5F2EB] text-[#7A0607] hover:bg-[#F5F2EB]/90"
             onClick={(event) => {
               event.currentTarget.blur()
               setFlipped((value) => !value)
@@ -524,45 +511,30 @@ export function FlashcardsPage() {
           >
             Turn around
           </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            size="pill"
-            aria-label="Next"
-            className="w-10 h-9 px-0 flex items-center justify-center font-bold text-base border border-[#960708]/15 shadow-sm bg-[#F5F2EB] text-[#7A0607]"
-            onClick={(event) => {
-              event.currentTarget.blur()
-              goTo(1)
-            }}
-          >
-            &gt;
-          </Button>
         </div>
 
-        {/* Row 2: Difficulty ratings right below Turn around */}
-        {flipped ? (
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-            {RATINGS.map((item) => (
-              <Button
-                key={item.rating}
-                type="button"
-                variant="secondary"
-                size="pill"
-                aria-label={item.label}
-                className="h-8 px-4 text-xs font-semibold group flex items-center gap-1.5 border border-[#960708]/15 shadow-sm bg-[#F5F2EB] text-[#7A0607]"
-                onClick={(event) => {
-                  event.currentTarget.blur()
-                  void rate(item.rating)
-                }}
-              >
-                <span>{item.label}</span>
-                <kbd className="inline-flex h-4 min-w-4 items-center justify-center rounded-md border border-foreground/20 bg-background/60 px-1 font-mono text-[10px] font-semibold text-foreground/70 shadow-xs transition-colors group-hover:border-foreground/40 group-hover:text-foreground">
-                  {item.keyHint}
-                </kbd>
-              </Button>
-            ))}
-          </div>
-        ) : null}
+        {/* Row 2: Difficulty ratings right below Turn around (always visible) */}
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+          {RATINGS.map((item) => (
+            <Button
+              key={item.rating}
+              type="button"
+              variant="secondary"
+              size="pill"
+              aria-label={item.label}
+              className="h-8 px-4 text-xs font-semibold group flex items-center gap-1.5 border border-[#960708]/15 shadow-sm bg-[#F5F2EB] text-[#7A0607] hover:bg-[#F5F2EB]/90"
+              onClick={(event) => {
+                event.currentTarget.blur()
+                void rate(item.rating)
+              }}
+            >
+              <span>{item.label}</span>
+              <kbd className="inline-flex h-4 min-w-4 items-center justify-center rounded-md border border-foreground/20 bg-background/60 px-1 font-mono text-[10px] font-semibold text-foreground/70 shadow-xs transition-colors group-hover:border-foreground/40 group-hover:text-foreground">
+                {item.keyHint}
+              </kbd>
+            </Button>
+          ))}
+        </div>
       </div>
     </section>
   )

@@ -107,7 +107,7 @@ const CATEGORIES: CategoryMeta[] = [
 ]
 
 export function StatsPage() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, isGuest } = useAuth()
   const { characters, loading: loadingCharacters } = useCharacters("all")
   const [stats, setStats] = useState<Stats | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<CategoryKey>("new")
@@ -154,7 +154,7 @@ export function StatsPage() {
     )
   }, [categoryWords, filterQuery])
 
-  if (!authLoading && !user) {
+  if (!authLoading && !user && !isGuest) {
     return (
       <section className="relative flex flex-1 min-h-[calc(100svh-6rem)] w-full items-center justify-center px-4 py-8">
         <div className="w-full max-w-md">
@@ -172,6 +172,13 @@ export function StatsPage() {
         <p className="font-heading text-lg text-[#7A0607]/85">
           FSRS Spaced Repetition & Anki Card Distribution
         </p>
+
+        {isGuest ? (
+          <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-[#FECB6D]/30 border border-[#7A0607]/20 px-4 py-1 font-kuaile text-xs text-[#7A0607]">
+            <span className="font-bold">Guest Mode:</span>
+            <span>Progress is stored locally in this browser.</span>
+          </div>
+        ) : null}
       </div>
 
       {stats ? (

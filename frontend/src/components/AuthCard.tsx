@@ -20,7 +20,13 @@ export function AuthCard({
   title,
   subtitle,
 }: AuthCardProps) {
-  const { signInWithGoogle, signInWithPassword, signUpWithPassword, resetPasswordForEmail } = useAuth()
+  const {
+    signInWithGoogle,
+    signInWithPassword,
+    signUpWithPassword,
+    resetPasswordForEmail,
+    continueAsGuest,
+  } = useAuth()
   const [tab, setTab] = useState<"signin" | "signup" | "forgot">(initialTab)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -290,6 +296,25 @@ export function AuthCard({
             </button>
           </p>
         )}
+      </div>
+
+      {/* 3. Continue as Guest Option */}
+      <div className="mt-5 pt-4 border-t border-[#7A0607]/15 flex flex-col items-center gap-1.5 text-center">
+        <button
+          type="button"
+          onClick={() => {
+            continueAsGuest()
+            if (onClose) onClose()
+          }}
+          className="w-full py-2.5 px-4 rounded-full font-kuaile text-xs sm:text-sm font-bold text-[#7A0607] bg-[#7A0607]/10 hover:bg-[#7A0607]/15 hover:scale-[1.01] transition-all flex items-center justify-center gap-2 border border-[#7A0607]/15 shadow-xs"
+        >
+          <span>Continue as Guest</span>
+          <span className="text-[11px] font-normal text-[#7A0607]/75 font-sans">(Try without saving)</span>
+          <span aria-hidden="true">→</span>
+        </button>
+        <p className="text-[11px] text-[#7A0607]/65 max-w-xs leading-tight">
+          Test flashcards & syllabi right away. Progress stays in this session.
+        </p>
       </div>
     </div>
   )

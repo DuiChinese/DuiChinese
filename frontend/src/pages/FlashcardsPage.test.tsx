@@ -4,30 +4,31 @@ describe("Flashcards page", () => {
   beforeEach(() => {
     localStorage.clear()
   })
-  it("shows the first due card and reveals the Anki ratings after a flip", async () => {
+  it("shows the first due card with Anki ratings always visible and flips card", async () => {
     const user = userEvent.setup()
     renderAt("/flashcards")
 
     expect(await screen.findByText("不")).toBeInTheDocument()
     expect(screen.getByRole("group", { name: "Study mode" })).toBeInTheDocument()
-    expect(screen.queryByRole("button", { name: "Easy" })).not.toBeInTheDocument()
-
-    await user.click(screen.getByRole("button", { name: "Turn around" }))
-
-    expect(screen.getByText("bù")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Again" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Hard" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Good" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Easy" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Turn around" })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Next" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Previous" })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Turn around" }))
+    expect(screen.getByText("bù")).toBeInTheDocument()
   })
 
-  it("moves to the next character with Next", async () => {
+  it("advances to the next character when rating a card", async () => {
     const user = userEvent.setup()
     renderAt("/flashcards")
 
     expect(await screen.findByText("不")).toBeInTheDocument()
-    await user.click(screen.getByRole("button", { name: "Next" }))
-    expect(screen.getByText("我")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Easy" }))
+    expect(await screen.findByText("我")).toBeInTheDocument()
   })
 
   it("shows pinyin first in Meaning mode", async () => {

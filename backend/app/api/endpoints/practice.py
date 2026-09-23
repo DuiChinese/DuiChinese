@@ -6,7 +6,7 @@ from sqlalchemy import func
 
 from app.db.session import get_db
 from app.models.character import Character
-from app.models.user_srs import UserCardSRS, UserReview
+from app.models.user_srs import UserCardSRS, UserReview, UserProfile
 from app.core.auth import get_current_user_id
 from app.core.anki_srs import (
     AnkiSRSState,
@@ -399,3 +399,36 @@ def get_practice_stats(
             mature=cat_mature,
         ),
     )
+
+
+@router.post("/reset")
+def reset_user_progress(
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Resets the authenticated user's study progress:
+    - Deletes all review history in UserReview for this user.
+    - Deletes all card SRS records in UserCardSRS for this user.
+    - Resets UserProfile streak counters and last study date if profile exists.
+    - Re-initializes all characters with the initial 7 unlocked at Day 1.
+    """
+    # 1. Delete user reviews
+    db.query(UserReview).filter(UserReview.user_id == user_id).delete(synchronize_session=False)
+
+    # 2. Delete user card SRS
+    db.query(UserCardSRS).filter(UserCardSRS.user_id == user_id).delete(synchronize_session=False)
+
+    # 3. Reset UserProfile if present
+    user_profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+    if user_profile:
+        user_profile.current_streak = 0
+        user_profile.last_study_date = None
+
+    db.commit()
+
+    # 4. Re-initialize SRS with first 7 characters unlocked
+    ensure_user_srs_initialized(user_id, db)
+
+    return {"ok": True, "message": "User progress reset successfully"}
+

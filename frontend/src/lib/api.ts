@@ -22,6 +22,15 @@ async function authHeaders(customHeaders?: Record<string, string>): Promise<Head
   return headers
 }
 
+async function hasAuthToken(): Promise<boolean> {
+  try {
+    const token = await getAccessToken()
+    return Boolean(token)
+  } catch {
+    return false
+  }
+}
+
 const UNLOCKED_STORAGE_KEY = "duichinese_unlocked_ids_v1"
 const LOCAL_SRS_KEY = "duichinese_local_srs_v1"
 
@@ -98,6 +107,7 @@ export async function loadCharacters(): Promise<Character[]> {
 
 export async function loadDueCharacters(): Promise<Character[]> {
   try {
+    if (!(await hasAuthToken())) throw new Error("Guest mode: using local SRS")
     const response = await fetch(`${API_BASE}/api/practice/due`, {
       headers: await authHeaders(),
     })
@@ -124,6 +134,7 @@ export async function loadDueCharacters(): Promise<Character[]> {
 
 export async function loadPracticeAhead(): Promise<Character[]> {
   try {
+    if (!(await hasAuthToken())) throw new Error("Guest mode: using local SRS")
     const response = await fetch(`${API_BASE}/api/practice/ahead`, {
       headers: await authHeaders(),
     })
@@ -140,6 +151,7 @@ export async function loadPracticeAhead(): Promise<Character[]> {
 
 export async function unlockNextBatch(count: number = 7): Promise<Character[]> {
   try {
+    if (!(await hasAuthToken())) throw new Error("Guest mode: using local SRS")
     const response = await fetch(`${API_BASE}/api/characters/unlock-next?count=${count}`, {
       method: "POST",
       headers: await authHeaders(),
@@ -158,6 +170,7 @@ export async function unlockNextBatch(count: number = 7): Promise<Character[]> {
 
 export async function loadStats(fallbackCharacters?: Character[]): Promise<Stats> {
   try {
+    if (!(await hasAuthToken())) throw new Error("Guest mode: using local SRS")
     const response = await fetch(`${API_BASE}/api/practice/stats`, {
       headers: await authHeaders(),
     })
@@ -230,6 +243,7 @@ export async function submitReview(
   rating: ReviewRating
 ): Promise<FlashcardReviewResponse> {
   try {
+    if (!(await hasAuthToken())) throw new Error("Guest mode: using local SRS")
     const response = await fetch(`${API_BASE}/api/practice/review`, {
       method: "POST",
       headers: await authHeaders({ "Content-Type": "application/json" }),
@@ -334,3 +348,34 @@ export async function evaluatePronunciation(params: {
     }
   }
 }
+
+export async function resetUserProgress(): Promise<{ ok: boolean; message: string }> {
+  // 1. Reset local storage SRS & unlocked IDs to initial 7 characters
+  try {
+    localStorage.removeItem(LOCAL_SRS_KEY)
+    const initial = HSK1_CHARACTERS.slice(0, 7).map((c) => c.id)
+    localStorage.setItem(UNLOCKED_STORAGE_KEY, JSON.stringify(initial))
+  } catch {
+    // Ignore storage errors
+  }
+
+  // 2. If authenticated, call backend reset endpoint
+  const authenticated = await hasAuthToken()
+  if (authenticated) {
+    try {
+      const headers = await authHeaders({ "Content-Type": "application/json" })
+      const res = await fetch(`${API_BASE}/api/practice/reset`, {
+        method: "POST",
+        headers,
+      })
+      if (res.ok) {
+        return await res.json()
+      }
+    } catch {
+      // In case backend is offline, local reset already completed
+    }
+  }
+
+  return { ok: true, message: "Progress reset successfully." }
+}
+

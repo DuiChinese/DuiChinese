@@ -6,18 +6,21 @@ import { AmbientShadows } from "@/components/AmbientShadows"
 import { BrandLogo } from "@/components/BrandLogo"
 import { AuthModal } from "@/components/AuthModal"
 import { useAuth } from "@/hooks/use-auth"
+import { useSettings } from "@/hooks/use-settings"
 import { cn } from "cn"
 
 const NAV_LINKS = [
   { to: "/flashcards", label: "Flashcards" },
   { to: "/characters", label: "Characters" },
   { to: "/stats", label: "Stats" },
+  { to: "/settings", label: "Settings" },
 ]
 
 export function AppShell() {
   const location = useLocation()
   const isFlashcards = location.pathname === "/flashcards"
-  const { user, signOut, loading } = useAuth()
+  const { user, signOut, loading, isGuest } = useAuth()
+  const { settings } = useSettings()
   const [authModalOpen, setAuthModalOpen] = useState(false)
 
   const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture
@@ -43,8 +46,8 @@ export function AppShell() {
         )}
       />
 
-      {/* 2. Ambient organic bamboo shadows */}
-      <AmbientShadows className="z-15" />
+      {/* 2. Ambient organic bamboo shadows (controllable via settings) */}
+      {settings.shadowsEnabled ? <AmbientShadows className="z-15" /> : null}
 
       <header
         data-app-header
@@ -100,6 +103,19 @@ export function AppShell() {
               >
                 <LogOutIcon className="size-3.5" />
                 <span className="sr-only">Sign out</span>
+              </button>
+            </div>
+          ) : !loading && isGuest ? (
+            <div className="flex items-center gap-2 pl-2 border-l border-[#7A0607]/20">
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#7A0607]/15 px-3 py-1 font-kuaile text-xs text-[#7A0607] font-semibold">
+                Guest Mode
+              </span>
+              <button
+                type="button"
+                onClick={() => setAuthModalOpen(true)}
+                className="inline-flex items-center justify-center rounded-full px-3.5 py-1 font-kuaile text-xs tracking-wide bg-[#FECB6D] text-[#7A0607] hover:bg-[#ffe199] font-bold transition-all shadow-xs hover:scale-[1.02] border border-[#7A0607]/15"
+              >
+                Sign In
               </button>
             </div>
           ) : !loading ? (
