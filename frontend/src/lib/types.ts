@@ -49,6 +49,7 @@ export interface Stats {
   mature_count: number
   mastered_count: number
   due_today_count: number
+  current_streak?: number
   average_ease_factor?: number
   average_stability?: number
   average_difficulty?: number

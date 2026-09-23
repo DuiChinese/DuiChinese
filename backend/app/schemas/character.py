@@ -86,4 +86,5 @@ class StatsResponse(BaseModel):
     average_stability: Optional[float] = 0.0
     average_difficulty: Optional[float] = 0.0
     retention_rate: Optional[float] = 100.0
+    current_streak: Optional[int] = 0
     categories: CategoryDistribution = CategoryDistribution()

@@ -33,6 +33,52 @@ async function hasAuthToken(): Promise<boolean> {
 
 const UNLOCKED_STORAGE_KEY = "duichinese_unlocked_ids_v1"
 const LOCAL_SRS_KEY = "duichinese_local_srs_v1"
+const LOCAL_STREAK_KEY = "duichinese_streak_v1"
+
+interface LocalStreakData {
+  streak: number
+  lastStudyDate: string
+}
+
+function getLocalStreak(): number {
+  try {
+    const raw = localStorage.getItem(LOCAL_STREAK_KEY)
+    if (raw) {
+      const data: LocalStreakData = JSON.parse(raw)
+      const today = new Date().toISOString().split("T")[0]
+      const last = new Date(data.lastStudyDate)
+      const now = new Date(today)
+      const diffDays = Math.round((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24))
+      if (diffDays <= 1) {
+        return data.streak || 0
+      }
+      return 0
+    }
+  } catch {
+    // fallback
+  }
+  return 0
+}
+
+function recordLocalStudyStreak(): void {
+  try {
+    const today = new Date().toISOString().split("T")[0]
+    const raw = localStorage.getItem(LOCAL_STREAK_KEY)
+    if (!raw) {
+      localStorage.setItem(LOCAL_STREAK_KEY, JSON.stringify({ streak: 1, lastStudyDate: today }))
+      return
+    }
+    const data: LocalStreakData = JSON.parse(raw)
+    if (data.lastStudyDate === today) return
+    const last = new Date(data.lastStudyDate)
+    const now = new Date(today)
+    const diffDays = Math.round((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24))
+    const nextStreak = diffDays === 1 ? (data.streak || 0) + 1 : 1
+    localStorage.setItem(LOCAL_STREAK_KEY, JSON.stringify({ streak: nextStreak, lastStudyDate: today }))
+  } catch {
+    // fallback
+  }
+}
 
 interface LocalSRSState {
   reps: number
@@ -224,6 +270,7 @@ export async function loadStats(fallbackCharacters?: Character[]): Promise<Stats
       mature_count: catMature.length,
       mastered_count: catMature.length,
       due_today_count: Math.min(3, unlockedChars.length),
+      current_streak: getLocalStreak(),
       average_ease_factor: 2.5,
       average_stability: 0.0,
       average_difficulty: 0.0,
@@ -294,6 +341,7 @@ export async function submitReview(
       due_date: dueDate.toISOString(),
     }
     saveLocalSRSMap(srsMap)
+    recordLocalStudyStreak()
 
     return {
       id: Date.now(),
@@ -353,6 +401,7 @@ export async function resetUserProgress(): Promise<{ ok: boolean; message: strin
   // 1. Reset local storage SRS & unlocked IDs to initial 7 characters
   try {
     localStorage.removeItem(LOCAL_SRS_KEY)
+    localStorage.removeItem(LOCAL_STREAK_KEY)
     const initial = HSK1_CHARACTERS.slice(0, 7).map((c) => c.id)
     localStorage.setItem(UNLOCKED_STORAGE_KEY, JSON.stringify(initial))
   } catch {

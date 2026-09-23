@@ -9,6 +9,7 @@ describe("Stats page", () => {
     expect(screen.getByText("Reviews")).toBeInTheDocument()
     expect(screen.getByText("Mastered")).toBeInTheDocument()
     expect(screen.getByText("Retention")).toBeInTheDocument()
+    expect(screen.getByText("Daily Streak")).toBeInTheDocument()
 
     // Anki card breakdown
     expect(screen.getByText("Anki Card Distribution")).toBeInTheDocument()

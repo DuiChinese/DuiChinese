@@ -42,6 +42,7 @@ import { AuthWall } from "@/components/AuthWall"
 import { useAuth } from "@/hooks/use-auth"
 import { useCharacters } from "@/hooks/use-characters"
 import { loadStats } from "@/lib/api"
+import { toChineseNumeral } from "@/lib/chinese-numerals"
 import { playPronunciation } from "@/lib/speech"
 import type { CategoryCharacterItem, Stats } from "@/lib/types"
 
@@ -183,6 +184,53 @@ export function StatsPage() {
 
       {stats ? (
         <>
+          {/* Daily Streak Card */}
+          <Card className="rounded-[1.75rem] ring-1 ring-[#7A0607]/15 overflow-hidden shadow-sm bg-[#F5F2EB]/95">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <CardTitle className="text-xl font-heading text-[#7A0607]">
+                    Daily Streak
+                  </CardTitle>
+                  <CardDescription className="text-[#7A0607]/75 text-xs sm:text-sm">
+                    Keep your daily study habit alive
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-1 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                {/* Flame Icon without frame */}
+                <img
+                  src="/assets/streak-flame.png"
+                  alt="Streak Flame"
+                  className="size-8 sm:size-9 object-contain flame-icon-pulse shrink-0"
+                />
+                <div className="flex items-baseline gap-2">
+                  <span
+                    aria-label={`Streak: ${stats.current_streak || 0} days`}
+                    className="font-kuaile text-3xl sm:text-4xl text-[#7A0607] select-none font-bold leading-none"
+                  >
+                    {toChineseNumeral(stats.current_streak || 0)}
+                  </span>
+                  <span className="font-garet text-xs sm:text-sm text-[#7A0607]/70 font-medium">
+                    ({stats.current_streak || 0} {stats.current_streak === 1 ? "day" : "days"})
+                  </span>
+                </div>
+              </div>
+
+              {/* Daily Motivational Chinese Proverb */}
+              <div className="rounded-xl bg-[#FFF9EE]/80 dark:bg-stone-900/40 border border-[#7A0607]/15 py-1.5 px-3 text-left sm:text-right shrink-0">
+                <div className="font-hanzi text-xs sm:text-sm text-[#7A0607] font-bold tracking-wide">
+                  持之以恒，金石可镂
+                </div>
+                <div className="font-garet text-[11px] text-[#7A0607]/70 italic mt-0.5">
+                  "Perseverance carves through metal and stone"
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Anki Card Distribution Card with Redesigned Warm Progress Bar */}
           <Card className="rounded-[1.75rem] ring-1 ring-[#7A0607]/15 overflow-hidden shadow-sm bg-[#F5F2EB]/95">
             <CardHeader className="pb-3">
@@ -489,7 +537,31 @@ export function StatsPage() {
           </Card>
 
           {/* FSRS Performance & Study Metrics Grid with Warm Chinese Palette */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            {/* Streak */}
+            <Card className="rounded-[1.75rem] ring-1 ring-[#7A0607]/10 bg-[#F5F2EB]/90 shadow-sm col-span-2 sm:col-span-1">
+              <CardHeader className="pb-1">
+                <div className="flex items-center justify-between">
+                  <CardDescription className="text-[#7A0607]/75 font-medium">Streak</CardDescription>
+                  <img
+                    src="/assets/streak-flame.png"
+                    alt="Streak flame"
+                    className="size-5 object-contain inline-block flame-icon-pulse"
+                  />
+                </div>
+                <div className="flex items-baseline gap-1 mt-1">
+                  <span className="font-heading text-4xl text-[#7A0607] font-bold">
+                    {toChineseNumeral(stats.current_streak || 0)}
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-[#7A0607]/70">
+                  {stats.current_streak || 0} {stats.current_streak === 1 ? "day" : "days"} consecutive
+                </p>
+              </CardContent>
+            </Card>
+
             {/* Due Today */}
             <Card className="rounded-[1.75rem] ring-1 ring-[#7A0607]/10 bg-[#F5F2EB]/90 shadow-sm">
               <CardHeader className="pb-1">

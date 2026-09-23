@@ -150,6 +150,30 @@ def record_review(
         status=status,
     )
     db.add(review)
+
+    # Update or initialize UserProfile streak
+    today = now.date()
+    profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+    if not profile:
+        profile = UserProfile(
+            user_id=user_id,
+            current_streak=1,
+            last_study_date=today,
+        )
+        db.add(profile)
+    else:
+        if profile.last_study_date is None:
+            profile.current_streak = 1
+            profile.last_study_date = today
+        elif profile.last_study_date == today:
+            pass
+        elif (today - profile.last_study_date).days == 1:
+            profile.current_streak = (profile.current_streak or 0) + 1
+            profile.last_study_date = today
+        else:
+            profile.current_streak = 1
+            profile.last_study_date = today
+
     db.commit()
     db.refresh(review)
 
@@ -379,6 +403,21 @@ def get_practice_stats(
         round((successful_reviews / total_reviews * 100), 1) if total_reviews > 0 else 0.0
     )
 
+    streak = 0
+    profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+    if profile:
+        today = datetime.now(timezone.utc).date()
+        if profile.last_study_date:
+            days_diff = (today - profile.last_study_date).days
+            if days_diff <= 1:
+                streak = profile.current_streak or 0
+            else:
+                streak = 0
+        else:
+            streak = profile.current_streak or 0
+    elif total_reviews > 0:
+        streak = 1
+
     return StatsResponse(
         total_characters=total_unlocked,
         total_reviews=total_reviews,
@@ -388,6 +427,7 @@ def get_practice_stats(
         mature_count=mature_count,
         mastered_count=mature_count,
         due_today_count=due_today_count,
+        current_streak=streak,
         average_ease_factor=avg_ease,
         average_stability=avg_stability,
         average_difficulty=avg_difficulty,
