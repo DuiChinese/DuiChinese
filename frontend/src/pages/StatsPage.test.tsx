@@ -1,6 +1,12 @@
 import { renderAt, screen, userEvent } from "@/test/render"
+import { saveLocalFSRSMap } from "@/lib/api"
+import { createPrelearnedCard } from "@/lib/fsrs-engine"
 
 describe("Stats page", () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
   it("renders Anki counters in heading cards", async () => {
     renderAt("/stats")
 
@@ -20,29 +26,23 @@ describe("Stats page", () => {
     expect(screen.getAllByText("Mature").length).toBeGreaterThanOrEqual(1)
   })
 
-  it("displays Hanzi and Pinyin table when clicking on a category", async () => {
+  it("displays Hanzi and Pinyin table when clicking on a category with words", async () => {
     const user = userEvent.setup()
+    saveLocalFSRSMap({
+      1: createPrelearnedCard(1),
+    })
+
     renderAt("/stats")
 
-    // Wait for stats to load and check table headers
+    // Click on "Mature" category card
+    const matureCards = await screen.findAllByRole("button", { name: /mature/i })
+    expect(matureCards.length).toBeGreaterThan(0)
+    await user.click(matureCards[0])
+
+    // Wait for table to display with headers
     expect(await screen.findByRole("columnheader", { name: "Hanzi" })).toBeInTheDocument()
     expect(screen.getByRole("columnheader", { name: "Pinyin" })).toBeInTheDocument()
     expect(screen.getByRole("columnheader", { name: "Meaning" })).toBeInTheDocument()
-
-    // Click on "New" category card
-    const newCards = screen.getAllByRole("button", { name: /new/i })
-    if (newCards.length > 0) {
-      await user.click(newCards[0])
-    }
-
-    expect(screen.getByText(/Words in/i)).toBeInTheDocument()
-
-    // Click on "Mature" category card
-    const matureCards = screen.getAllByRole("button", { name: /mature/i })
-    if (matureCards.length > 0) {
-      await user.click(matureCards[0])
-    }
-
     expect(screen.getByText(/Words in Mature/i)).toBeInTheDocument()
   })
 })

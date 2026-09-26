@@ -80,7 +80,7 @@ export function ResetProgressDialog({
               <strong>SRS History:</strong> All reviews and retention levels in the spaced repetition system will be deleted.
             </li>
             <li>
-              <strong>Characters:</strong> You will return to <em>Day 1</em> with only the first 7 characters unlocked.
+              <strong>Characters:</strong> All characters will return to locked status (0 unlocked) until you study or pre-learn them.
             </li>
             <li>
               <strong>Statistics:</strong> Mature cards, active streaks, and study stats will be reset to zero.

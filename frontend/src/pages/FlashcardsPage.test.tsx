@@ -1,34 +1,52 @@
+import { vi } from "vitest"
 import { renderAt, screen, userEvent } from "@/test/render"
+
+vi.mock("@/lib/fsrs-engine", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/fsrs-engine")>()
+  return {
+    ...actual,
+    fisherYatesShuffle: (arr: any[]) => [...arr],
+  }
+})
 
 describe("Flashcards page", () => {
   beforeEach(() => {
     localStorage.clear()
   })
-  it("shows the first due card with Anki ratings always visible and flips card", async () => {
+  it("shows the first due card with Turn around on front and reveals ratings when flipped", async () => {
     const user = userEvent.setup()
     renderAt("/flashcards")
 
     expect(await screen.findByText("不")).toBeInTheDocument()
     expect(screen.getByRole("group", { name: "Study mode" })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Again" })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Hard" })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Good" })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Easy" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Turn around" })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Again" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Hard" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Good" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Easy" })).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Next" })).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Previous" })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole("button", { name: "Turn around" }))
     expect(screen.getByText("bù")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Turn around" })).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Again" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Hard" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Good" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Easy" })).toBeInTheDocument()
   })
 
-  it("advances to the next character when rating a card", async () => {
+  it("advances to the next character when rating a card and resets to front", async () => {
     const user = userEvent.setup()
     renderAt("/flashcards")
 
     expect(await screen.findByText("不")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Turn around" }))
     await user.click(screen.getByRole("button", { name: "Easy" }))
     expect(await screen.findByText("我")).toBeInTheDocument()
+    // Next card starts on front: Turn around is visible, ratings are hidden
+    expect(screen.getByRole("button", { name: "Turn around" })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Easy" })).not.toBeInTheDocument()
   })
 
   it("shows pinyin first in Meaning mode", async () => {
@@ -84,14 +102,14 @@ describe("Flashcards page", () => {
     expect(await screen.findByText("我")).toBeInTheDocument()
   })
 
-  it("displays completion state when all daily due cards are reviewed and allows unlocking next batch", async () => {
+  it("displays completion state when all daily due cards are reviewed with Keep reviewing and Go to Dashboard actions", async () => {
     const user = userEvent.setup()
     renderAt("/flashcards")
 
     // Expect the first card to load
     expect(await screen.findByText("不")).toBeInTheDocument()
 
-    // Flip and rate Easy through both passes for all cards in the initial due session until consolidated
+    // Flip and rate Easy for all cards in the initial due session until complete
     while (!screen.queryByText(/That's all for today!/i)) {
       const turnAroundBtn = screen.queryByRole("button", { name: "Turn around" })
       if (!turnAroundBtn) break
@@ -102,14 +120,32 @@ describe("Flashcards page", () => {
 
     // Now all cards for today are completed!
     expect(await screen.findByText(/That's all for today!/i)).toBeInTheDocument()
+    expect(screen.getByText(/You've reviewed all your scheduled characters for today/i)).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /Keep reviewing/i })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: /Unlock tomorrow's cards/i })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /Dashboard/i })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /Unlock tomorrow's cards/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /Pre-learned Hanzi/i })).not.toBeInTheDocument()
 
-    // Click to unlock next batch
-    await user.click(screen.getByRole("button", { name: /Unlock tomorrow's cards/i }))
+    // Click "Keep reviewing" to enter free practice / Ghost Mode
+    await user.click(screen.getByRole("button", { name: /Keep reviewing/i }))
 
-    // Next batch is loaded into study session (contains 你好)
-    expect(await screen.findByText("你好")).toBeInTheDocument()
+    // Active deck loads cards for ghost practice
+    expect(await screen.findByRole("button", { name: "Turn around" })).toBeInTheDocument()
+
+    // Complete cards in Ghost Mode
+    while (!screen.queryByText(/Practice round completed!/i)) {
+      const turnAroundBtn = screen.queryByRole("button", { name: "Turn around" })
+      if (!turnAroundBtn) break
+      await user.click(turnAroundBtn)
+      const easyBtn = await screen.findByRole("button", { name: "Easy" })
+      await user.click(easyBtn)
+    }
+
+    // Ghost Mode completion screen
+    expect(await screen.findByText(/Practice round completed!/i)).toBeInTheDocument()
+    expect(screen.getByText(/in ghost mode/i)).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /Practicar otra ronda/i })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /Dashboard/i })).toBeInTheDocument()
   })
 
   it("flips the card when pressing the Space key", async () => {

@@ -25,7 +25,7 @@ export const HSK1_CHARACTERS: Character[] = [
     "id": 1,
     "order_index": 1,
     "hsk_level": 1,
-    "is_unlocked": true
+    "is_unlocked": false
   },
   {
     "hanzi": "我",
@@ -46,7 +46,7 @@ export const HSK1_CHARACTERS: Character[] = [
     "id": 2,
     "order_index": 2,
     "hsk_level": 1,
-    "is_unlocked": true
+    "is_unlocked": false
   },
   {
     "hanzi": "你",
@@ -67,7 +67,7 @@ export const HSK1_CHARACTERS: Character[] = [
     "id": 3,
     "order_index": 3,
     "hsk_level": 1,
-    "is_unlocked": true
+    "is_unlocked": false
   },
   {
     "hanzi": "好",
@@ -88,7 +88,7 @@ export const HSK1_CHARACTERS: Character[] = [
     "id": 4,
     "order_index": 4,
     "hsk_level": 1,
-    "is_unlocked": true
+    "is_unlocked": false
   },
   {
     "hanzi": "是",
@@ -109,7 +109,7 @@ export const HSK1_CHARACTERS: Character[] = [
     "id": 5,
     "order_index": 5,
     "hsk_level": 1,
-    "is_unlocked": true
+    "is_unlocked": false
   },
   {
     "hanzi": "学",
@@ -130,7 +130,7 @@ export const HSK1_CHARACTERS: Character[] = [
     "id": 6,
     "order_index": 6,
     "hsk_level": 1,
-    "is_unlocked": true
+    "is_unlocked": false
   },
   {
     "hanzi": "生",
@@ -151,7 +151,7 @@ export const HSK1_CHARACTERS: Character[] = [
     "id": 7,
     "order_index": 7,
     "hsk_level": 1,
-    "is_unlocked": true
+    "is_unlocked": false
   },
   {
     "hanzi": "你好",

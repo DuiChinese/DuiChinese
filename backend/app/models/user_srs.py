@@ -14,6 +14,7 @@ class UserProfile(Base):
     display_name = Column(Text, nullable=True)
     avatar_url = Column(Text, nullable=True)
     daily_card_goal = Column(Integer, default=7)
+    daily_new_cards = Column(Integer, default=10)
     current_streak = Column(Integer, default=0)
     last_study_date = Column(Date, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -32,11 +33,14 @@ class UserCardSRS(Base):
     character_id = Column(Integer, ForeignKey("characters.id"), nullable=False, index=True)
     
     state = Column(String(20), default="new")  # 'new', 'learning', 'review', 'relearning', 'mastered'
+    fsrs_state = Column(Integer, default=0)    # 0 = New, 1 = Learning, 2 = Review, 3 = Relearning
     is_unlocked = Column(Boolean, default=False, nullable=False)
     reps = Column(Integer, default=0)
     lapses = Column(Integer, default=0)
     ease_factor = Column(Float, default=2.50)
     interval_days = Column(Integer, default=0)
+    scheduled_days = Column(Integer, default=0)
+    elapsed_days = Column(Integer, default=0)
     due_date = Column(DateTime(timezone=True), nullable=True)
     last_reviewed = Column(DateTime(timezone=True), nullable=True)
     

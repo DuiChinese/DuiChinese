@@ -44,7 +44,10 @@ class FlashcardReviewResponse(BaseModel):
     character_id: int
     status: str
     rating: int
+    state: Optional[int] = 0
     interval_days: Optional[int] = 0
+    scheduled_days: Optional[int] = 0
+    elapsed_days: Optional[int] = 0
     ease_factor: Optional[float] = 2.5
     stability: Optional[float] = 0.0
     difficulty: Optional[float] = 0.0
@@ -61,9 +64,16 @@ class CategoryCharacterItem(BaseModel):
     pinyin: str
     meaning: str
     tone: int = 1
+    state: Optional[int] = 0
     interval_days: int = 0
+    scheduled_days: int = 0
     stability: Optional[float] = 0.0
     difficulty: Optional[float] = 0.0
+    formatted_interval: Optional[str] = "New"
+
+
+class PrelearnRequest(BaseModel):
+    character_ids: List[int]
 
 
 class CategoryDistribution(BaseModel):

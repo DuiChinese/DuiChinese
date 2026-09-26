@@ -30,6 +30,8 @@ FACTOR = 19.0 / 81.0
 # Anki threshold for Mature vs Young cards
 MATURE_INTERVAL_THRESHOLD_DAYS = 21
 
+import random
+
 # Default FSRS v4.5 parameters (17 weights)
 DEFAULT_WEIGHTS = (
     0.40255,   # w0: initial S for Again (1)
@@ -52,15 +54,34 @@ DEFAULT_WEIGHTS = (
 )
 
 
+def apply_fuzz(interval: int, enable_fuzz: bool = True) -> int:
+    """
+    Applies stochastic noise to scheduled intervals >= 3 days to avoid future review clumping.
+    """
+    if not enable_fuzz or interval < 3:
+        return interval
+    if interval < 7:
+        delta = random.randint(-1, 1)
+    elif interval < 15:
+        delta = random.randint(-1, 2)
+    else:
+        fuzz_range = max(1, int(round(interval * 0.05)))
+        delta = random.randint(-fuzz_range, fuzz_range)
+    return max(2, interval + delta)
+
+
 @dataclass
 class FSRSState:
     """FSRS card state tracking memory parameters and schedule."""
     state: str = "new"  # 'new', 'learning', 'review', 'relearning', 'mature'
+    fsrs_state: int = 0  # 0: New, 1: Learning, 2: Review, 3: Relearning
     reps: int = 0
     lapses: int = 0
     stability: float = 0.0
     difficulty: float = 0.0
     interval_days: int = 0
+    scheduled_days: int = 0
+    elapsed_days: int = 0
     due_date: Optional[datetime] = None
     last_reviewed: Optional[datetime] = None
     retrievability: float = 0.0
@@ -68,7 +89,7 @@ class FSRSState:
     @property
     def is_young(self) -> bool:
         """Card is in review with interval < 21 days."""
-        return self.reps > 0 and self.state in ("review", "learning", "relearning") and self.interval_days < MATURE_INTERVAL_THRESHOLD_DAYS
+        return self.reps > 0 and self.interval_days < MATURE_INTERVAL_THRESHOLD_DAYS
 
     @property
     def is_mature(self) -> bool:
@@ -184,6 +205,7 @@ def calculate_fsrs_next_review(
     rating: int,
     now: Optional[datetime] = None,
     desired_retention: float = 0.90,
+    enable_fuzz: bool = True,
     weights: Tuple[float, ...] = DEFAULT_WEIGHTS
 ) -> FSRSState:
     """
@@ -191,13 +213,14 @@ def calculate_fsrs_next_review(
 
     Args:
         current: Current FSRS card state.
-        rating: 1 (Again), 2 (Hard), 3 (Good), 4 (Easy).
+        rating: 1 (Again), 2 (Hard), 3 (Good), or 4 (Easy).
         now: Optional current timestamp (defaults to UTC now).
         desired_retention: Target probability of recall (default: 0.90 = 90%).
+        enable_fuzz: Apply stochastic fuzzing to scheduled days.
         weights: FSRS parameter weights tuple.
 
     Returns:
-        FSRSState: Updated card state with new stability, difficulty, interval, and due date.
+        FSRSState: Updated card state with new stability, difficulty, interval, scheduled_days, and due date.
     """
     if rating not in (1, 2, 3, 4):
         raise ValueError(f"Invalid rating: {rating}. Must be 1 (Again), 2 (Hard), 3 (Good), or 4 (Easy).")
@@ -213,25 +236,34 @@ def calculate_fsrs_next_review(
         
         if rating == 1:
             new_state = "learning"
+            new_fsrs_state = 1
             new_lapses = current.lapses + 1
             new_reps = 0
+            scheduled_days = 0
         elif rating == 4:
             new_state = "mature" if new_interval >= MATURE_INTERVAL_THRESHOLD_DAYS else "review"
+            new_fsrs_state = 2
             new_lapses = current.lapses
             new_reps = 1
+            scheduled_days = apply_fuzz(new_interval, enable_fuzz=enable_fuzz)
         else:
             new_state = "review"
+            new_fsrs_state = 1 if rating == 2 else 2
             new_lapses = current.lapses
             new_reps = 1
+            scheduled_days = apply_fuzz(new_interval, enable_fuzz=enable_fuzz)
 
-        due_date = now + timedelta(days=new_interval)
+        due_date = now + timedelta(days=max(1, scheduled_days))
         return FSRSState(
             state=new_state,
+            fsrs_state=new_fsrs_state,
             reps=new_reps,
             lapses=new_lapses,
             stability=new_s,
             difficulty=new_d,
             interval_days=new_interval,
+            scheduled_days=scheduled_days,
+            elapsed_days=0,
             due_date=due_date,
             last_reviewed=now,
             retrievability=1.0,
@@ -256,9 +288,11 @@ def calculate_fsrs_next_review(
     if rating == 1:  # Again (Forgot)
         new_s = next_stability_forget(current.stability, new_d, current_r, weights)
         new_interval = 1
+        scheduled_days = 0
         new_lapses = current.lapses + 1
         new_reps = 0
         new_state = "relearning" if current.state in ("review", "mature") else "learning"
+        new_fsrs_state = 3 if current.state in ("review", "mature") else 1
     else:  # Hard (2), Good (3), Easy (4)
         new_s = next_stability_recall(current.stability, new_d, current_r, rating, weights)
         new_interval = calculate_interval(new_s, desired_retention)
@@ -268,20 +302,26 @@ def calculate_fsrs_next_review(
         else:
             new_interval = max(1, new_interval)
         
+        scheduled_days = apply_fuzz(new_interval, enable_fuzz=enable_fuzz)
         new_lapses = current.lapses
         new_reps = current.reps + 1
         new_state = "mature" if new_interval >= MATURE_INTERVAL_THRESHOLD_DAYS else "review"
+        new_fsrs_state = 2
 
-    due_date = now + timedelta(days=new_interval)
+    due_date = now + timedelta(days=max(1, scheduled_days if rating > 1 else 1))
 
     return FSRSState(
         state=new_state,
+        fsrs_state=new_fsrs_state,
         reps=new_reps,
         lapses=new_lapses,
         stability=new_s,
         difficulty=new_d,
         interval_days=new_interval,
+        scheduled_days=scheduled_days,
+        elapsed_days=int(round(elapsed_days)),
         due_date=due_date,
         last_reviewed=now,
         retrievability=current_r,
     )
+

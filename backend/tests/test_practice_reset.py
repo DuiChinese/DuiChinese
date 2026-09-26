@@ -24,7 +24,7 @@ def test_reset_progress_clears_reviews_and_resets_srs(client):
 
     stats_before = client.get("/api/practice/stats").json()
     assert stats_before["total_reviews"] >= 2
-    assert stats_before["new_count"] < 7
+    assert stats_before["total_characters"] >= 2
 
     # 2. Reset progress
     reset_resp = client.post("/api/practice/reset")
@@ -33,10 +33,11 @@ def test_reset_progress_clears_reviews_and_resets_srs(client):
     assert data["ok"] is True
     assert "User progress reset successfully" in data["message"]
 
-    # 3. Check stats after reset
+    # 3. Check stats after reset: starting from scratch with 0 unlocked
     stats_after = client.get("/api/practice/stats").json()
     assert stats_after["total_reviews"] == 0
-    assert stats_after["new_count"] == 7
+    assert stats_after["total_characters"] == 0
+    assert stats_after["new_count"] == 0
     assert stats_after["learning_count"] == 0
     assert stats_after["young_count"] == 0
     assert stats_after["mature_count"] == 0

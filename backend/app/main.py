@@ -33,6 +33,20 @@ async def lifespan(app: FastAPI):
                 if existing_srs and "is_unlocked" not in existing_srs:
                     conn.execute(text("ALTER TABLE card_srs ADD COLUMN is_unlocked INTEGER DEFAULT 0"))
 
+                res_user_srs = conn.execute(text("PRAGMA table_info(user_card_srs)")).fetchall()
+                existing_user_srs = {row[1] for row in res_user_srs}
+                if existing_user_srs and "scheduled_days" not in existing_user_srs:
+                    conn.execute(text("ALTER TABLE user_card_srs ADD COLUMN scheduled_days INTEGER DEFAULT 0"))
+                if existing_user_srs and "elapsed_days" not in existing_user_srs:
+                    conn.execute(text("ALTER TABLE user_card_srs ADD COLUMN elapsed_days INTEGER DEFAULT 0"))
+                if existing_user_srs and "fsrs_state" not in existing_user_srs:
+                    conn.execute(text("ALTER TABLE user_card_srs ADD COLUMN fsrs_state INTEGER DEFAULT 0"))
+
+                res_prof = conn.execute(text("PRAGMA table_info(user_profiles)")).fetchall()
+                existing_prof = {row[1] for row in res_prof}
+                if existing_prof and "daily_new_cards" not in existing_prof:
+                    conn.execute(text("ALTER TABLE user_profiles ADD COLUMN daily_new_cards INTEGER DEFAULT 10"))
+
                 res_char = conn.execute(text("PRAGMA table_info(characters)")).fetchall()
                 existing_char = {row[1] for row in res_char}
                 if existing_char and "order_index" not in existing_char:
@@ -88,11 +102,9 @@ async def lifespan(app: FastAPI):
                         interval_days=0,
                         stability=0.0,
                         difficulty=0.0,
-                        is_unlocked=1 if idx <= 7 else 0
+                        is_unlocked=0,
                     )
                     db.add(srs)
-                elif idx <= 7 and not srs.is_unlocked:
-                    srs.is_unlocked = 1
             db.commit()
             logger.info("HSK1 characters and CardSRS initialized successfully.")
     except Exception as e:
@@ -127,6 +139,8 @@ app.add_middleware(
 # Include Routers under /api
 app.include_router(characters.router, prefix="/api")
 app.include_router(practice.router, prefix="/api")
+app.include_router(practice.study_router, prefix="/api")
+app.include_router(practice.cards_router, prefix="/api")
 app.include_router(pronunciation.router, prefix="/api")
 app.include_router(seed.router, prefix="/api")
 

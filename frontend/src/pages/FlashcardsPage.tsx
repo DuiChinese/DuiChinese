@@ -1,9 +1,10 @@
 import { type FormEvent, useCallback, useEffect, useState } from "react"
-import { useSearchParams } from "react-router-dom"
-import { CheckCircle2Icon, CircleAlertIcon, MicIcon, UnlockIcon, RotateCcwIcon } from "lucide-react"
+import { useSearchParams, useNavigate } from "react-router-dom"
+import { CheckCircle2Icon, CircleAlertIcon, MicIcon, Ghost } from "lucide-react"
 
 import { HanziCard } from "@/components/HanziCard"
 import { StudyModeSwitch } from "@/components/StudyModeSwitch"
+import { SessionCompletion } from "@/components/SessionCompletion"
 import { AuthWall } from "@/components/AuthWall"
 import { useAuth } from "@/hooks/use-auth"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -12,7 +13,8 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useCharacters } from "@/hooks/use-characters"
-import { evaluatePronunciation, loadPracticeAhead, submitReview, unlockNextBatch } from "@/lib/api"
+import { evaluatePronunciation, loadPracticeAhead, submitReview } from "@/lib/api"
+import { reinsertAgainCard } from "@/lib/fsrs-engine"
 import { canRecognizeSpeech, listenForHanzi, recognitionFallbackHint } from "@/lib/recognition"
 import { playPronunciation, stopPronunciation } from "@/lib/speech"
 import {
@@ -37,6 +39,7 @@ type Feedback = {
 }
 
 export function FlashcardsPage() {
+  const navigate = useNavigate()
   const { user, loading: authLoading, isGuest } = useAuth()
   const { characters: initialCharacters, loading } = useCharacters("due")
   const [deck, setDeck] = useState<Character[]>([])
@@ -48,11 +51,11 @@ export function FlashcardsPage() {
   const [guess, setGuess] = useState("")
   const [listening, setListening] = useState(false)
   const [feedback, setFeedback] = useState<Feedback | null>(null)
-  const [unlocking, setUnlocking] = useState(false)
   const [sessionCompleted, setSessionCompleted] = useState(false)
   const [sessionReviewCount, setSessionReviewCount] = useState(0)
-  const [masterySteps, setMasterySteps] = useState<Record<number, number>>({})
   const [sessionTotal, setSessionTotal] = useState(0)
+  const [graduatedCount, setGraduatedCount] = useState(0)
+  const [isGhostMode, setIsGhostMode] = useState(false)
 
   // Sync initial characters into active deck
   useEffect(() => {
@@ -60,9 +63,12 @@ export function FlashcardsPage() {
       setDeck(initialCharacters)
       setIndex(0)
       setSessionTotal(initialCharacters.length)
-      setMasterySteps({})
+      setGraduatedCount(0)
+      setIsGhostMode(false)
       if (initialCharacters.length === 0) {
         setSessionCompleted(true)
+      } else {
+        setSessionCompleted(false)
       }
     }
   }, [initialCharacters, loading])
@@ -70,9 +76,6 @@ export function FlashcardsPage() {
   const character = deck[index]
   const count = deck.length
   const modeMeta = STUDY_MODES.find((item) => item.id === mode) ?? STUDY_MODES[0]
-  const masteredCount = Object.values(masterySteps).filter((step) => step >= 2).length
-  const totalCards = Math.max(sessionTotal, deck.length + masteredCount)
-  const currentStep = character ? (masterySteps[character.id] || 0) : 0
 
   const resetPrompt = useCallback(() => {
     setFlipped(false)
@@ -101,102 +104,63 @@ export function FlashcardsPage() {
   const rate = useCallback(
     async (rating: ReviewRating) => {
       if (!character) return
-      await submitReview(character.id, rating)
+      await submitReview(character.id, rating, isGhostMode)
       setSessionReviewCount((c) => c + 1)
 
-      // Strict Multi-Pass SRS Learning Protocol:
-      // Cards cannot graduate on a single 2-second click.
-      // - Rating 1 (Again): Failed card; reset step to 0, placed at end of session.
-      // - Rating 2 (Hard): Struggled; reset step to 0, re-queued 2 cards ahead for quick drill.
-      // - Rating 3 (Good) & Rating 4 (Easy): Advance step (Step 0 -> Step 1 -> Step 2 Mastered).
-      // Card graduates only after achieving 2 confirmed successful reviews.
-      const cardId = character.id
-      const prevStep = masterySteps[cardId] || 0
-      let nextStep = prevStep
-      let graduated = false
-
-      if (rating === 1 || rating === 2) {
-        // Reset step to 0 on failure or struggle
-        nextStep = 0
-      } else if (rating === 3 || rating === 4) {
-        nextStep = prevStep + 1
-        if (nextStep >= 2) {
-          graduated = true
-        }
-      }
-
-      setMasterySteps((prev) => ({
-        ...prev,
-        [cardId]: nextStep,
-      }))
-
       setDeck((prevDeck) => {
-        const remaining = [...prevDeck]
-        const [reviewedCard] = remaining.splice(index, 1)
+        if (prevDeck.length === 0) return []
 
-        if (!graduated) {
-          if (rating === 1) {
-            // Again: re-queue at the end of the queue
-            remaining.push(reviewedCard)
-          } else if (rating === 2) {
-            // Hard: repeat quickly (2 cards ahead or at end)
-            if (remaining.length > 2) {
-              remaining.splice(2, 0, reviewedCard)
-            } else {
-              remaining.push(reviewedCard)
-            }
+        if (rating === 1) {
+          // Again (Rating 1): Re-inserted dynamically between 3 and 5 positions behind current index
+          const nextDeck = reinsertAgainCard(prevDeck, index)
+          const nextIndex = index >= nextDeck.length ? 0 : index
+          setIndex(nextIndex)
+          return nextDeck
+        } else if (rating === 2) {
+          // Hard (Rating 2): Quick re-drill (2 cards ahead or at end of active queue)
+          const remaining = [...prevDeck]
+          const [reviewedCard] = remaining.splice(index, 1)
+          if (remaining.length > 2) {
+            remaining.splice(2, 0, reviewedCard)
           } else {
-            // Good / Easy 1st pass: interleaved re-testing (insert 3 cards ahead or at end)
-            if (remaining.length > 3) {
-              remaining.splice(3, 0, reviewedCard)
-            } else {
-              remaining.push(reviewedCard)
-            }
+            remaining.push(reviewedCard)
           }
-        }
+          const nextIndex = index >= remaining.length ? 0 : index
+          setIndex(nextIndex)
+          return remaining
+        } else {
+          // Good (Rating 3) & Easy (Rating 4): Card graduates from active session queue
+          setGraduatedCount((c) => c + 1)
+          const remaining = [...prevDeck]
+          remaining.splice(index, 1)
 
-        if (remaining.length === 0) {
-          setSessionCompleted(true)
-          return []
-        }
+          if (remaining.length === 0) {
+            setSessionCompleted(true)
+            return []
+          }
 
-        // Adjust index to stay within bounds
-        const nextIndex = index >= remaining.length ? 0 : index
-        setIndex(nextIndex)
-        return remaining
+          const nextIndex = index >= remaining.length ? 0 : index
+          setIndex(nextIndex)
+          return remaining
+        }
       })
 
       resetPrompt()
     },
-    [character, index, masterySteps, resetPrompt]
+    [character, index, isGhostMode, resetPrompt]
   )
 
   const handlePracticeAhead = useCallback(async () => {
     const ahead = await loadPracticeAhead()
     if (ahead.length > 0) {
+      setIsGhostMode(true)
       setDeck(ahead)
       setIndex(0)
       setSessionTotal(ahead.length)
-      setMasterySteps({})
+      setGraduatedCount(0)
+      setSessionReviewCount(0)
       setSessionCompleted(false)
       resetPrompt()
-    }
-  }, [resetPrompt])
-
-  const handleUnlockNext = useCallback(async () => {
-    setUnlocking(true)
-    try {
-      const nextBatch = await unlockNextBatch(7)
-      if (nextBatch.length > 0) {
-        setDeck(nextBatch)
-        setIndex(0)
-        setSessionTotal(nextBatch.length)
-        setMasterySteps({})
-        setSessionCompleted(false)
-        resetPrompt()
-      }
-    } finally {
-      setUnlocking(false)
     }
   }, [resetPrompt])
 
@@ -245,13 +209,14 @@ export function FlashcardsPage() {
           event.shiftKey ? "slow" : "normal"
         )
       } else if (["1", "2", "3", "4"].includes(event.key)) {
+        if (!flipped) return
         void rate(Number(event.key) as ReviewRating)
       }
     }
 
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [character, goTo, rate])
+  }, [character, flipped, goTo, rate])
 
   function checkHeardCharacter(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -313,52 +278,15 @@ export function FlashcardsPage() {
     )
   }
 
-  // Daily SRS completion screen
+  // Completion screen (Regular daily session vs Ghost Mode practice)
   if (sessionCompleted || !character) {
     return (
-      <section className="relative h-full w-full select-none">
-        {/* Center: Completion text centered on the red tapete in glowing yellow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex w-full max-w-lg flex-col items-center gap-3 px-4 text-center">
-          <h2 className="font-heading text-4xl text-[#FECB6D] drop-shadow-sm sm:text-5xl tracking-wide">
-            That's all for today!
-          </h2>
-          <p className="max-w-md text-base leading-relaxed text-[#F5D7A0] sm:text-lg">
-            You have thoroughly reviewed and consolidated all cards scheduled for today
-            respecting the spaced repetition algorithm (multi-pass confirmation).
-          </p>
-          {sessionReviewCount > 0 ? (
-            <p className="rounded-full bg-[#FECB6D]/20 border border-[#FECB6D]/40 px-4 py-1 text-sm font-medium text-[#FECB6D]">
-              {sessionReviewCount} {sessionReviewCount === 1 ? "review completed" : "reviews completed"} in this session
-            </p>
-          ) : null}
-        </div>
-
-        {/* Bottom: Buttons resting comfortably below the red tapete on marble */}
-        <div className="absolute top-[78%] left-0 right-0 flex flex-wrap items-center justify-center gap-4 px-4 z-20">
-          <Button
-            type="button"
-            variant="secondary"
-            size="pill"
-            onClick={handlePracticeAhead}
-            className="flex items-center gap-2 border border-[#960708]/15 shadow-sm bg-[#F5F2EB] text-[#7A0607]"
-          >
-            <RotateCcwIcon className="size-4" />
-            Keep reviewing
-          </Button>
-
-          <Button
-            type="button"
-            variant="secondary"
-            size="pill"
-            disabled={unlocking}
-            onClick={handleUnlockNext}
-            className="flex items-center gap-2 border border-[#960708]/15 shadow-sm bg-[#F5F2EB] text-[#7A0607]"
-          >
-            <UnlockIcon className="size-4" />
-            {unlocking ? "Unlocking…" : "Unlock tomorrow's cards (+7)"}
-          </Button>
-        </div>
-      </section>
+      <SessionCompletion
+        isGhostMode={isGhostMode}
+        reviewCount={sessionReviewCount}
+        onPracticeAhead={handlePracticeAhead}
+        onNavigateHome={() => navigate("/")}
+      />
     )
   }
 
@@ -381,30 +309,44 @@ export function FlashcardsPage() {
           <p className="font-heading text-xs sm:text-sm text-[#7A0607] font-medium">{modeMeta.hint}</p>
         </div>
 
-        {/* Session Multi-Pass Consolidation Progress Bar with ZCOOL KuaiLe */}
-        <div className="flex w-full max-w-[26rem] flex-col gap-1 px-2 mt-0.5">
+        {/* Session / Ghost Practice Consolidation Progress Bar */}
+        <div
+          className={cn(
+            "flex w-full max-w-[26rem] flex-col gap-1 rounded-xl transition-all",
+            isGhostMode
+              ? "bg-[#FECB6D]/25 border border-[#7A0607]/15 p-2 shadow-xs"
+              : "px-2 mt-0.5"
+          )}
+        >
           <div className="flex items-center justify-between font-kuaile text-[11px] sm:text-xs text-[#7A0607]">
             <div className="flex items-center gap-1.5">
-              <span
-                className={cn(
-                  "inline-block size-2 rounded-full ring-1 ring-background transition-all",
-                  currentStep === 0
-                    ? "bg-[#7A0607] animate-pulse"
-                    : "bg-primary"
-                )}
-              />
-              <span className="tracking-wide font-semibold text-[#7A0607]">
-                {currentStep === 0 ? "Pass 1 of 2: Initial Recall" : "Pass 2 of 2: Consolidation Check"}
-              </span>
+              {isGhostMode ? (
+                <>
+                  <Ghost className="size-3.5 text-[#7A0607] shrink-0" />
+                  <span className="tracking-wide font-semibold text-[#7A0607]">
+                    Ghost Practice
+                  </span>
+                  <span className="text-[10px] font-garet text-[#7A0607]/70 font-normal">
+                    · FSRS data unaffected
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="inline-block size-2 rounded-full ring-1 ring-background bg-primary animate-pulse shrink-0" />
+                  <span className="tracking-wide font-semibold text-[#7A0607]">
+                    Daily SRS Session
+                  </span>
+                </>
+              )}
             </div>
-            <span className="text-[#7A0607]/80 tracking-wide font-medium">
-              {masteredCount} of {totalCards} mastered · {count} in queue
+            <span className="text-[#7A0607]/80 tracking-wide font-medium shrink-0">
+              {graduatedCount} of {sessionTotal} completed · {count} in queue
             </span>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-[#280405]/15 ring-1 ring-foreground/15 p-0.5">
             <div
               className="h-full bg-primary transition-all duration-300 rounded-full"
-              style={{ width: `${Math.round((masteredCount / Math.max(1, totalCards)) * 100)}%` }}
+              style={{ width: `${Math.round((graduatedCount / Math.max(1, sessionTotal)) * 100)}%` }}
             />
           </div>
         </div>
@@ -497,44 +439,47 @@ export function FlashcardsPage() {
           </Alert>
         ) : null}
 
-        {/* Row 1: Turn around */}
-        <div className="flex items-center justify-center">
-          <Button
-            type="button"
-            variant="secondary"
-            size="pill"
-            className="h-9 px-6 text-sm font-semibold border border-[#960708]/15 shadow-sm bg-[#F5F2EB] text-[#7A0607] hover:bg-[#F5F2EB]/90"
-            onClick={(event) => {
-              event.currentTarget.blur()
-              setFlipped((value) => !value)
-            }}
-          >
-            Turn around
-          </Button>
-        </div>
-
-        {/* Row 2: Difficulty ratings right below Turn around (always visible) */}
-        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-          {RATINGS.map((item) => (
+        {/* Front / Back State Controls */}
+        {!flipped ? (
+          /* Anverso: Show only Turn around button */
+          <div className="flex items-center justify-center">
             <Button
-              key={item.rating}
               type="button"
               variant="secondary"
               size="pill"
-              aria-label={item.label}
-              className="h-8 px-4 text-xs font-semibold group flex items-center gap-1.5 border border-[#960708]/15 shadow-sm bg-[#F5F2EB] text-[#7A0607] hover:bg-[#F5F2EB]/90"
+              className="h-9 px-6 text-sm font-semibold border border-[#960708]/15 shadow-sm bg-[#F5F2EB] text-[#7A0607] hover:bg-[#F5F2EB]/90"
               onClick={(event) => {
                 event.currentTarget.blur()
-                void rate(item.rating)
+                setFlipped(true)
               }}
             >
-              <span>{item.label}</span>
-              <kbd className="inline-flex h-4 min-w-4 items-center justify-center rounded-md border border-foreground/20 bg-background/60 px-1 font-mono text-[10px] font-semibold text-foreground/70 shadow-xs transition-colors group-hover:border-foreground/40 group-hover:text-foreground">
-                {item.keyHint}
-              </kbd>
+              Turn around
             </Button>
-          ))}
-        </div>
+          </div>
+        ) : (
+          /* Reverso: Show only difficulty rating buttons [1: Again, 2: Hard, 3: Good, 4: Easy] */
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+            {RATINGS.map((item) => (
+              <Button
+                key={item.rating}
+                type="button"
+                variant="secondary"
+                size="pill"
+                aria-label={item.label}
+                className="h-8 px-4 text-xs font-semibold group flex items-center gap-1.5 border border-[#960708]/15 shadow-sm bg-[#F5F2EB] text-[#7A0607] hover:bg-[#F5F2EB]/90"
+                onClick={(event) => {
+                  event.currentTarget.blur()
+                  void rate(item.rating)
+                }}
+              >
+                <span>{item.label}</span>
+                <kbd className="inline-flex h-4 min-w-4 items-center justify-center rounded-md border border-foreground/20 bg-background/60 px-1 font-mono text-[10px] font-semibold text-foreground/70 shadow-xs transition-colors group-hover:border-foreground/40 group-hover:text-foreground">
+                  {item.keyHint}
+                </kbd>
+              </Button>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   )

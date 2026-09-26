@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   Play,
   RotateCcw,
+  Sparkles,
   Target,
   Trees,
   UserCheck,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react"
 
 import { ResetProgressDialog } from "@/components/ResetProgressDialog"
+import { PrelearnedHanziDialog } from "@/components/PrelearnedHanziDialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -31,6 +33,7 @@ export function SettingsPage() {
   const { user, isGuest } = useAuth()
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isPrelearnOpen, setIsPrelearnOpen] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null)
   const [isPlayingTestAudio, setIsPlayingTestAudio] = useState(false)
@@ -283,6 +286,30 @@ export function SettingsPage() {
                 })}
               </div>
             </div>
+
+            {/* Pre-learned Vocabulary Onboarding */}
+            <div className="p-3.5 rounded-2xl bg-white/80 dark:bg-stone-900/60 border border-stone-200/60 dark:border-stone-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-heading text-sm text-[#7A0607]">
+                    Pre-learned Characters
+                  </div>
+                  <p className="text-xs text-stone-600 dark:text-stone-400 font-garet">
+                    Mark characters you already know to skip initial learning drills.
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsPrelearnOpen(true)}
+                className="w-full font-garet text-xs border-[#7A0607]/20 text-[#7A0607] hover:bg-[#FECB6D]/20 gap-2"
+              >
+                <Sparkles className="size-3.5" />
+                Select Pre-learned Hanzi
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
@@ -336,6 +363,15 @@ export function SettingsPage() {
         onClose={() => setIsDialogOpen(false)}
         onConfirm={handleConfirmReset}
         isResetting={isResetting}
+      />
+
+      {/* Pre-learned Hanzi Onboarding Dialog */}
+      <PrelearnedHanziDialog
+        open={isPrelearnOpen}
+        onOpenChange={setIsPrelearnOpen}
+        onSaved={(count) => {
+          setFeedbackMessage(`Successfully marked ${count} characters as mature.`)
+        }}
       />
     </div>
   )

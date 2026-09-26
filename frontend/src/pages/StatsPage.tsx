@@ -492,7 +492,11 @@ export function StatsPage() {
 
                         {/* Interval / FSRS days */}
                         <TableCell className="text-right font-mono text-xs">
-                          {(word.interval_days ?? 0) > 0 ? (
+                          {word.formatted_interval ? (
+                            <span className="font-semibold text-[#7A0607]">
+                              {word.formatted_interval}
+                            </span>
+                          ) : (word.interval_days ?? 0) > 0 ? (
                             <span className="font-semibold text-[#7A0607]">
                               {word.interval_days}d
                             </span>

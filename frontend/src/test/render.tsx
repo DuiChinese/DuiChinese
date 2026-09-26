@@ -46,4 +46,4 @@ export function renderAt(
   )
 }
 
-export { screen, userEvent }
+export { render, screen, userEvent }

@@ -54,8 +54,8 @@ def setup_test_db():
             lapses=0,
             ease_factor=2.5,
             interval_days=0,
-            is_unlocked=1 if idx <= 7 else 0,
-            due_date=now if idx <= 7 else None,
+            is_unlocked=0,
+            due_date=None,
         )
         db.add(srs)
 
@@ -63,12 +63,13 @@ def setup_test_db():
             user_id=TEST_USER_ID,
             character_id=char.id,
             state="new",
+            fsrs_state=0,
             reps=0,
             lapses=0,
             ease_factor=2.50,
             interval_days=0,
-            is_unlocked=True if idx <= 7 else False,
-            due_date=now if idx <= 7 else None,
+            is_unlocked=False,
+            due_date=None,
         )
         db.add(user_srs)
 

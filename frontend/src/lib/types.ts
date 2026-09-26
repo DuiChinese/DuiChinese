@@ -22,15 +22,39 @@ export interface Character {
 
 export type ReviewRating = 1 | 2 | 3 | 4 // 1: Again, 2: Hard, 3: Good/Medium, 4: Easy
 
+// FSRS Entity specification (0 = New, 1 = Learning, 2 = Review, 3 = Relearning)
+export interface UserCardProgress {
+  id: string
+  userId: string
+  hanziId: string
+  state: 0 | 1 | 2 | 3
+  due: Date | string
+  stability: number
+  difficulty: number
+  elapsed_days: number
+  scheduled_days: number
+  reps: number
+  lapses: number
+  last_review: Date | string | null
+}
+
+export interface UserSettings {
+  userId: string
+  daily_new_cards: number // Minimum 5, maximum 15 (default: 10)
+}
+
 export interface CategoryCharacterItem {
   id: number
   hanzi: string
   pinyin: string
   meaning: string
   tone: number
+  state?: 0 | 1 | 2 | 3
   interval_days?: number
+  scheduled_days?: number
   stability?: number
   difficulty?: number
+  formatted_interval?: string
 }
 
 export interface StatsCategories {
@@ -63,6 +87,9 @@ export interface FlashcardReviewResponse {
   status: string
   rating: number
   interval_days: number
+  scheduled_days?: number
+  elapsed_days?: number
+  state?: number | string
   stability?: number
   difficulty?: number
   reps: number
@@ -77,3 +104,4 @@ export interface PronunciationEvaluation {
   similarity_score: number
   feedback: string
 }
+

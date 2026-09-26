@@ -68,10 +68,12 @@ def get_characters(
     if char_ids:
         if user_id:
             for s in db.query(UserCardSRS).filter(UserCardSRS.user_id == user_id, UserCardSRS.character_id.in_(char_ids)).all():
-                srs_map[s.character_id] = bool(s.is_unlocked)
+                is_unlocked = bool((s.fsrs_state is not None and s.fsrs_state != 0) or (s.reps and s.reps > 0) or (s.stability and s.stability > 0))
+                srs_map[s.character_id] = is_unlocked
         else:
             for s in db.query(CardSRS).filter(CardSRS.character_id.in_(char_ids)).all():
-                srs_map[s.character_id] = bool(s.is_unlocked)
+                is_unlocked = bool((s.reps and s.reps > 0) or (s.stability and s.stability > 0) or (s.state and s.state != "new"))
+                srs_map[s.character_id] = is_unlocked
 
     results = []
     for c in chars:
@@ -142,7 +144,10 @@ def get_random_character(
     is_unlocked = False
     if user_id:
         srs = db.query(UserCardSRS).filter(UserCardSRS.user_id == user_id, UserCardSRS.character_id == char.id).first()
-        is_unlocked = bool(srs.is_unlocked) if srs else False
+        is_unlocked = bool(srs and ((srs.fsrs_state is not None and srs.fsrs_state != 0) or (srs.reps and srs.reps > 0) or (srs.stability and srs.stability > 0)))
+    else:
+        srs = db.query(CardSRS).filter(CardSRS.character_id == char.id).first()
+        is_unlocked = bool(srs and ((srs.reps and srs.reps > 0) or (srs.stability and srs.stability > 0) or (srs.state and srs.state != "new")))
 
     return _to_character_response(char, is_unlocked=is_unlocked)
 
@@ -161,6 +166,9 @@ def get_character_by_id(
     is_unlocked = False
     if user_id:
         srs = db.query(UserCardSRS).filter(UserCardSRS.user_id == user_id, UserCardSRS.character_id == char.id).first()
-        is_unlocked = bool(srs.is_unlocked) if srs else False
+        is_unlocked = bool(srs and ((srs.fsrs_state is not None and srs.fsrs_state != 0) or (srs.reps and srs.reps > 0) or (srs.stability and srs.stability > 0)))
+    else:
+        srs = db.query(CardSRS).filter(CardSRS.character_id == char.id).first()
+        is_unlocked = bool(srs and ((srs.reps and srs.reps > 0) or (srs.stability and srs.stability > 0) or (srs.state and srs.state != "new")))
 
     return _to_character_response(char, is_unlocked=is_unlocked)
